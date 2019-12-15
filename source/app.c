@@ -2,244 +2,227 @@
 #include <stdlib.h>
 
 #include "app.h"
-#include "timer.h"
+#include "os.h"
 
-
-typedef enum {
-	jsmpeg_frame_type_video = 0xFA010000,
-	jsmpeg_frame_type_audio = 0xFB010000
-} jsmpeg_trame_type_t;
-
-typedef struct {
-	jsmpeg_trame_type_t type;
-	int size;
-	char data[0];
-} jsmpeg_frame_t;
-
-typedef struct {
-	unsigned char magic[4];
-	unsigned short width;
-	unsigned short height;
-} jsmpeg_header_t;
-
-
-typedef enum {
-	input_type_key = 0x0001,
-	input_type_mouse_button = 0x0002,
-	input_type_mouse_absolute = 0x0004,
-	input_type_mouse_relative = 0x0008,
-	input_type_mouse = 
-		input_type_mouse_button | 
-		input_type_mouse_absolute | 
-		input_type_mouse_relative
-} input_type_t;
-
-typedef struct {
-	unsigned short type;
-	unsigned short state;
-	unsigned short key_code;
-} input_key_t;
-
-typedef struct {
-	unsigned short type;
-	unsigned short flags;
-	float x, y;
-} input_mouse_t;
-
-
-int swap_int32(int in) {
-	return ((in>>24)&0xff) |
-		((in<<8)&0xff0000) |
-		((in>>8)&0xff00) |
-		((in<<24)&0xff000000);
-}
-
-int swap_int16(int in) {
-	return ((in>>8)&0xff) | ((in<<8)&0xff00);
-}
-
-// Proxies for app_on_* callbacks
-void on_connect(server_t *server, libwebsocket *socket) { app_on_connect((app_t *)server->user, socket); }
-int on_http_req(server_t *server, libwebsocket *socket, char *request) { return app_on_http_req((app_t *)server->user, socket, request); }
-void on_message(server_t *server, libwebsocket *socket, void *data, size_t len) { app_on_message((app_t *)server->user, socket, data, len); }
-void on_close(server_t *server, libwebsocket *socket) { app_on_close((app_t *)server->user, socket); }
-
-
-
-
-app_t *app_create(HWND window, int port, int bit_rate, int out_width, int out_height, int allow_input, grabber_crop_area_t crop) {
+app_t *app_create(int port, int display_number, int bit_rate, int allow_input, char *password)
+{
 	app_t *self = (app_t *)malloc(sizeof(app_t));
 	memset(self, 0, sizeof(app_t));
 
-	self->mouse_speed = APP_MOUSE_SPEED;
-	self->grabber = grabber_create(window, crop);
-	self->allow_input = allow_input;
-	
-	if( !out_width ) { out_width = self->grabber->width; }
-	if( !out_height ) { out_height = self->grabber->height; }
-	if( !bit_rate ) { bit_rate = out_width * 1500; } // estimate bit rate based on output size
+	self->bit_rate = bit_rate;
+	self->display_number = display_number;
 
-	self->encoder = encoder_create(
-		self->grabber->width, self->grabber->height, // in size
-		out_width, out_height, // out size
-		bit_rate
-	);
-	
-	self->server = server_create(port, APP_FRAME_BUFFER_SIZE);
-	if( !self->server ) {
-		printf("Error: could not create Server; try using another port\n");
-		return NULL;
-	}
+	if (!os_is_display(self->display_number)) {
+        printf("Invalid display\n");
+        exit(1);
+    }
 
-	self->server->on_connect = on_connect;
-	self->server->on_http_req = on_http_req;
-	self->server->on_message = on_message;
-	self->server->on_close = on_close;
-	self->server->user = self; // Set the app as user data, so we can access it in callbacks
+    self->input = input_create(self->display_number);
+    self->grabber = grabber_create(self->display_number);
+    self->encoder = encoder_create(self->grabber->width, self->grabber->height, 0, 0, self->bit_rate);
+
+    self->stream_server = stream_server_create(port, password);
+
+    self->message_server = message_server_create(port + 1, password);
+    self->message_server->user = self;
+    self->message_server->on_change_display = app_on_change_display;
+
+    if (allow_input) {
+        self->message_server->on_paste = app_on_paste;
+        self->message_server->on_copy = app_on_copy;
+        self->message_server->on_key_down = app_on_key_down;
+        self->message_server->on_key_up = app_on_key_up;
+        self->message_server->on_mouse_move = app_on_mouse_move;
+        self->message_server->on_mouse_left_down = app_on_mouse_left_down;
+        self->message_server->on_mouse_left_up = app_on_mouse_left_up;
+        self->message_server->on_mouse_right_down = app_on_mouse_right_down;
+        self->message_server->on_mouse_right_up = app_on_mouse_right_up;
+        self->message_server->on_mouse_middle_down = app_on_mouse_middle_down;
+        self->message_server->on_mouse_middle_up = app_on_mouse_middle_up;
+        self->message_server->on_mouse_scroll = app_on_mouse_scroll;
+        self->message_server->on_upload_file = app_on_upload_file;
+    }
+
+	pthread_mutex_init(&self->mutex_streaming, NULL);
+	pthread_mutex_init(&self->mutex_input, NULL);
 
 	return self;
 }
 
 void app_destroy(app_t *self) {
-	if( self == NULL ) { return; }
 
-	encoder_destroy(self->encoder);
-	grabber_destroy(self->grabber);
-	server_destroy(self->server);
-	free(self);
+	if (self != NULL) {
+        encoder_destroy(self->encoder);
+        grabber_destroy(self->grabber);
+        stream_server_destroy(self->stream_server);
+        message_server_destroy(self->message_server);
+        input_destroy(self->input);
+
+        free(self);
+    }
 }
 
-int app_on_http_req(app_t *self, libwebsocket *socket, char *request) {
-	//printf("http request: %s\n", request);
-	if( strcmp(request, "/") == 0 ) {
-		libwebsockets_serve_http_file(self->server->context, socket, "client/index.html", "text/html; charset=utf-8", NULL);
-		return true;
-	}
-	else if( strcmp(request, "/jsmpg.js") == 0 ) {
-		libwebsockets_serve_http_file(self->server->context, socket, "client/jsmpg.js", "text/javascript; charset=utf-8", NULL);
-		return true;
-	}
-	else if( strcmp(request, "/jsmpg-vnc.js") == 0 ) {
-		libwebsockets_serve_http_file(self->server->context, socket, "client/jsmpg-vnc.js", "text/javascript; charset=utf-8", NULL);
-		return true;
-	}
-	return false;
+void app_on_change_display(app_t *self, int value) {
+
+    if (value == self->display_number) {
+        return;
+    }
+
+    printf("Changing display: %d\n", value);
+
+    if (os_is_display(value)) {
+
+        pthread_mutex_lock(&self->mutex_input);
+        pthread_mutex_lock(&self->mutex_streaming);
+
+        input_destroy(self->input);
+        grabber_destroy(self->grabber);
+        encoder_destroy(self->encoder);
+
+        self->display_number = value;
+        self->input = input_create(self->display_number);
+        self->grabber = grabber_create(self->display_number);
+        self->encoder = encoder_create(self->grabber->width, self->grabber->height, 0, 0, self->bit_rate);
+
+        pthread_mutex_unlock(&self->mutex_input);
+        pthread_mutex_unlock(&self->mutex_streaming);
+    }
 }
 
-void app_on_connect(app_t *self, libwebsocket *socket) {
-	printf("\nclient connected: %s\n", server_get_client_address(self->server, socket));
-
-	jsmpeg_header_t header = {		
-		{'j','s','m','p'}, 
-		swap_int16(self->encoder->out_width), swap_int16(self->encoder->out_height)
-	};
-	server_send(self->server, socket, &header, sizeof(header), server_type_binary);
+void app_on_paste(app_t *self, char *contents)
+{
+    os_set_clipboard(contents, self->display_number);
 }
 
-void app_on_close(app_t *self, libwebsocket *socket) {
-	printf("\nclient disconnected: %s\n", server_get_client_address(self->server, socket));
+void app_on_copy(app_t *self, char **out_clipboard)
+{
+    *out_clipboard = os_get_clipboard(self->display_number);
 }
 
-void app_on_message(app_t *self, libwebsocket *socket, void *data, size_t len) {
-	if (!self->allow_input) {
-		return;
-	}
-
-	input_type_t type = (input_type_t)((unsigned short *)data)[0];
-
-	if( type & input_type_key && len >= sizeof(input_key_t) ) {
-		input_key_t *input = (input_key_t *)data;
-
-		if( input->key_code == VK_CAPITAL ) { return; } // ignore caps lock
-
-		UINT scan_code = MapVirtualKey(input->key_code, MAPVK_VK_TO_VSC_EX);
-		UINT flags = KEYEVENTF_SCANCODE	| (input->state ? 0 : KEYEVENTF_KEYUP);
-
-		// set extended bit for some keys
-		switch( input->key_code ) {
-			case VK_LEFT: case VK_UP: case VK_RIGHT: case VK_DOWN:
-			case VK_PRIOR: case VK_NEXT: case VK_END: case VK_HOME:
-			case VK_INSERT: case VK_DELETE: case VK_DIVIDE: case VK_NUMLOCK:
-				scan_code |= 0x100;
-				flags |= KEYEVENTF_EXTENDEDKEY;
-				break;
-		}
-
-		//printf("key: %d -> %d\n", input->key_code, scan_code);
-		keybd_event((BYTE)input->key_code, scan_code, flags, 0);
-	}
-	else if( type & input_type_mouse && len >= sizeof(input_mouse_t) ) {
-		input_mouse_t *input = (input_mouse_t *)data;
-
-		if( type & input_type_mouse_absolute ) {
-			POINT window_pos = {0, 0};
-			ClientToScreen(self->grabber->window, &window_pos);
-
-			// figure out the x / y scaling for the rendered video
-			float scale_x = ((float)self->encoder->in_width / self->encoder->out_width),
-				scale_y =((float)self->encoder->in_height / self->encoder->out_height);
-
-			int x = (int)(input->x * scale_x + window_pos.x + self->grabber->crop.x),
-				y = (int)(input->y * scale_y + window_pos.y + self->grabber->crop.y);
-
-			//printf("mouse absolute %d, %d\n", x, y);
-			SetCursorPos(x, y);
-		}
-
-		if( type & input_type_mouse_relative ) {
-			int x = (int)(input->x * self->mouse_speed),
-				y = (int)(input->y * self->mouse_speed);
-
-			//printf("mouse relative %d, %d\n", x, y);
-			mouse_event(MOUSEEVENTF_MOVE, x, y, 0, NULL);
-		}
-
-		if( type & input_type_mouse_button ) {
-			//printf("mouse button %d\n", input->flags);
-			mouse_event(input->flags, 0, 0, 0, NULL);
-		}
-	}
+void app_on_key_down(app_t *self, int code)
+{
+    pthread_mutex_lock(&self->mutex_input);
+    input_key_press(self->input, code, true);
+    pthread_mutex_unlock(&self->mutex_input);
 }
 
-void app_run(app_t *self, int target_fps) {
-	jsmpeg_frame_t *frame = (jsmpeg_frame_t *)malloc(APP_FRAME_BUFFER_SIZE);
-	frame->type = jsmpeg_frame_type_video;
-	frame->size = 0;
+void app_on_key_up(app_t *self, int code)
+{
+    pthread_mutex_lock(&self->mutex_input);
+    input_key_press(self->input, code, false);
+    pthread_mutex_unlock(&self->mutex_input);
+}
 
-	double
-		fps = 60.0f,
-		wait_time = (1000.0f/target_fps) - 1.5f;
+void app_on_mouse_move(app_t *self, int x, int y)
+{
+    pthread_mutex_lock(&self->mutex_input);
+    input_mouse_move(self->input, x, y);
+    pthread_mutex_unlock(&self->mutex_input);
+}
 
-	timer_t *frame_timer = timer_create();
+void app_on_mouse_left_down(app_t *self)
+{
+    pthread_mutex_lock(&self->mutex_input);
+    input_mouse_left_button(self->input, true);
+    pthread_mutex_unlock(&self->mutex_input);
+}
 
-	while( true ) {
-		double delta = timer_delta(frame_timer);
-		if( delta > wait_time ) {
-			fps = fps * 0.95f + 50.0f/delta;
-			timer_reset(frame_timer);
+void app_on_mouse_left_up(app_t *self)
+{
+    pthread_mutex_lock(&self->mutex_input);
+    input_mouse_left_button(self->input, false);
+    pthread_mutex_unlock(&self->mutex_input);
+}
 
-			void *pixels;
-			double grab_time = timer_measure(grab_time) {
-				pixels = grabber_grab(self->grabber);
-			}
+void app_on_mouse_right_down(app_t *self)
+{
+    pthread_mutex_lock(&self->mutex_input);
+    input_mouse_right_button(self->input, true);
+    pthread_mutex_unlock(&self->mutex_input);
+}
 
-			double encode_time = timer_measure(encode_time) {
-				size_t encoded_size = APP_FRAME_BUFFER_SIZE - sizeof(jsmpeg_frame_t);
-				encoder_encode(self->encoder, pixels, frame->data, &encoded_size);
-				
-				if( encoded_size ) {
-					frame->size = swap_int32(sizeof(jsmpeg_frame_t) + encoded_size);
-					server_broadcast(self->server, frame, sizeof(jsmpeg_frame_t) + encoded_size, server_type_binary);
-				}
-			}
-			
-			printf("fps:%3d (grabbing:%6.2fms, scaling/encoding:%6.2fms)\r", (int)fps, grab_time, encode_time);
-		}
+void app_on_mouse_right_up(app_t *self)
+{
+    pthread_mutex_lock(&self->mutex_input);
+    input_mouse_right_button(self->input, false);
+    pthread_mutex_unlock(&self->mutex_input);
+}
 
-		server_update(self->server);
-		Sleep(1);
-	}
+void app_on_mouse_middle_down(app_t *self)
+{
+    pthread_mutex_lock(&self->mutex_input);
+    input_mouse_middle_button(self->input, true);
+    pthread_mutex_unlock(&self->mutex_input);
+}
 
-	timer_destroy(frame_timer);
-	free(frame);
+void app_on_mouse_middle_up(app_t *self)
+{
+    pthread_mutex_lock(&self->mutex_input);
+    input_mouse_middle_button(self->input, false);
+    pthread_mutex_unlock(&self->mutex_input);
+}
+
+void app_on_mouse_scroll(app_t *self, int amount)
+{
+    pthread_mutex_lock(&self->mutex_input);
+    input_mouse_scroll(self->input, amount);
+    pthread_mutex_unlock(&self->mutex_input);
+}
+
+void app_on_upload_file(app_t *self, char *filename, int contents_size, char *contents)
+{
+    os_save_upload(contents, contents_size, filename);
+}
+
+void app_run(app_t *self, int target_fps)
+{
+    double frame_interval = (1000 / target_fps);
+    double fps = target_fps;
+    double start, stop;
+    double delta;
+
+    int x, y;
+
+    while (true) {
+
+        while (self->stream_server->active_connections == 0) {
+            stream_server_idle(self->stream_server);
+        }
+
+        start = os_get_time();
+        delta = (start - stop);
+
+        if (delta > frame_interval) {
+
+            fps = fps * 0.95f + 50.0f / delta;
+
+            if (fps > target_fps) {
+                frame_interval = frame_interval + 0.05f;
+            }
+            if (fps < target_fps && frame_interval > 0) {
+                frame_interval = frame_interval - 0.05f;
+            }
+
+            pthread_mutex_lock(&self->mutex_streaming);
+
+            input_get_cursor_position(self->input, &x, &y);
+
+            grabber_grab(self->grabber);
+            encoder_encode(self->encoder, self->grabber->buffer);
+
+            stream_server_broadcast(self->stream_server, self->encoder->data, self->encoder->data_size, self->display_number, x, y);
+            stream_server_update(self->stream_server);
+
+            pthread_mutex_unlock(&self->mutex_streaming);
+
+            stop = os_get_time();
+
+            printf("FPS: %d\r", (int)fps);
+
+            fflush(stdout);
+        }
+
+        os_sleep(1);
+
+    }
 }

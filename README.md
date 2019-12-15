@@ -1,49 +1,48 @@
-# jsmpeg-vnc
+##Fork Changes:
+- Linux support
+- Latest JSMpeg
+- Shared clipboard
+- File uploading via drag drop
+- Socket authentication
+- Display switching
+- Message server
 
-A low latency, high framerate screen sharing server and client, viewable in any modern browser.
+##
 
-[More Info & Demo Video](http://phoboslab.org/log/2015/07/play-gta-v-in-your-browser-sort-of)
+#####Linux Support
+Only Linux support currently. Most of the Windows code already exists in the repository, I just haven't got round to testing and setting up automated building.
 
-[Download Binaries](https://github.com/phoboslab/jsmpeg-vnc/releases)
+##
 
+#####Socket Authentication:
 
-## Usage & Performance Considerations
+`-a secret` would require `?password=secret` appended to the URL. If the password does not match the sockets are closed. Use at your own risk! I'm unsure how secure this is.
 
-```
-jsmpeg-vnc.exe [options] <window name>
+##
 
-Options:
-	-b bitrate in kilobit/s (default: estimated by output size)
-	-s output size as WxH. E.g: -s 640x480 (default: same as window size)
-	-f target framerate (default: 60)
-	-p port (default: 8080)
-	-c crop area in the captured window as X,Y,W,H. E.g.: -c 200,300,640,480
-	-i enable/disable remote input. E.g. -i 0 (default: 1)
+#####Message Server:
+I encountered a issue where when a lot of messages were being sent the image quality would reduce. 
+To solve this another socket is opened on the next port (port + 1). If external access is needed remember to port forward both ports (8080 and 8081 if using default ports).
 
-Use "desktop" as the window name to capture the whole Desktop. Use "cursor"
-to capture the window at the current cursor position.
+Also, all incoming messages are now serviced on a separate thread, this may improving streaming.
 
-Example:
-jsmpeg-vnc.exe -b 2000 -s 640x480 -f 30 -p 9006 "Quake 3: Arena"
+##
 
-To enable mouse lock in the browser (useful for games that require relative
-mouse movements, not absolute ones), append "?mouselock" at the target URL
-i.e: http://<server-ip>:8080/?mouselock
-```	
+#####Display Changing:
 
-For sharing the whole Desktop, Windows' Aero theme should be disabled as it slows down screen capture significantly. When serving a single window (e.g. games), Aero only has a marginal performance impact and can be left enabled.
+I've added support to change displays from the client. Append `?display=50` to the URL to switch to X display 50. 
 
-Capturing and encoding 1920x1080 video narrowly amounts to 60fps on my system and occupies a whole CPU core. Capturing smaller windows significantly speeds up the process. Depending on your Wifi network quality you may also want to dial down the bitrate for large video sizes.
+You can spawn another display using `Xvfb :50`. Likely you'll want to spawn a desktop interface, this can be done the same way VNC servers do with the `xstartup` file. Or you can just launch a application using the DISPLAY variable such as `DISPLAY=:50 xterm`.
 
-If Windows complains about a missing MSVCR100.dll, install the [Microsoft Visual C++ 2010 Redistributable Package](https://www.microsoft.com/en-us/download/details.aspx?id=5555).
+##
 
+#####Shared Clipboard:
 
-## Technology & License
+Clipboard is shared when `ctrl + c` or `ctrl + v` is pressed. You'll need to install `xclip` for this to work. `sudo apt-get install xclip`
 
-This App uses [ffmpeg](https://github.com/FFmpeg/FFmpeg) for encoding, [libwebsockets](https://github.com/warmcat/libwebsockets) for the WebSocket server and [jsmpeg](https://github.com/phoboslab/jsmpeg) for decoding in the browser. Note that the jsmpeg version in this repository has been modified to get rid of an extra frame of latency. The server sends each frame with a custom header, so the resulting WebSocket stream is not a valid MPEG video anymore.
+##
 
-The client application (the thing that runs in the browser) is very rudimentary. In particular, the mobile version has some quirks with mouse input and only has touch buttons for the arrow keys, ESC and Enter, though this can be easily extended.
+##### File Uploading:
 
-jsmpeg-vnc is published under the [GPLv3 License](http://www.gnu.org/licenses/gpl-3.0.en.html).
+Drag-drop a file onto the player and it will upload it to the servers `/home/Downloads/` directory. While a upload is in progress sending input will not work.
 
-If you require my code under a different license, or need some consulting work regarding jsmpeg/jsmpeg-vnc, get in touch: dominic@phoboslab.org

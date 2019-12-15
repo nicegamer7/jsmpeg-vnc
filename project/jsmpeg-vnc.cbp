@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="jsmpeg-vnc" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="windows-gdi">
+				<Option output="../bin/jsmpeg-vnc" prefix_auto="1" extension_auto="1" />
+				<Option object_output="../bin/obj/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add directory="../source/windows/ffmpeg/include" />
+					<Add directory="../source/windows/libwebsocket/include" />
+					<Add directory="../source/windows/gdi" />
+					<Add directory="../source/windows" />
+				</Compiler>
+				<Linker>
+					<Add option="-static" />
+					<Add library="gdi32" />
+					<Add library="ws2_32" />
+					<Add library="../source/windows/libwebsocket/lib/libwebsockets.dll.a" />
+					<Add library="../source/windows/ffmpeg/lib/avcodec.lib" />
+					<Add library="../source/windows/ffmpeg/lib/swscale.lib" />
+					<Add library="../source/windows/ffmpeg/lib/avformat.lib" />
+					<Add library="../source/windows/ffmpeg/lib/swresample.lib" />
+					<Add library="../source/windows/ffmpeg/lib/avutil.lib" />
+				</Linker>
+			</Target>
+			<Target title="windows-desktop-duplication">
+				<Option output="../bin/jsmpeg-vnci" prefix_auto="1" extension_auto="1" />
+				<Option object_output="../bin/obj/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add directory="../source/windows/ffmpeg/include" />
+					<Add directory="../source/windows/libwebsocket/include" />
+					<Add directory="../source/windows/desktop_duplication" />
+					<Add directory="../source/windows" />
+				</Compiler>
+				<Linker>
+					<Add option="-static" />
+					<Add library="gdi32" />
+					<Add library="ws2_32" />
+					<Add library="d3d11" />
+					<Add library="../source/windows/libwebsocket/lib/libwebsockets.dll.a" />
+					<Add library="../source/windows/ffmpeg/lib/avcodec.lib" />
+					<Add library="../source/windows/ffmpeg/lib/swscale.lib" />
+					<Add library="../source/windows/ffmpeg/lib/avformat.lib" />
+					<Add library="../source/windows/ffmpeg/lib/swresample.lib" />
+					<Add library="../source/windows/ffmpeg/lib/avutil.lib" />
+				</Linker>
+			</Target>
+			<Target title="linux">
+				<Option output="../bin/jsmpeg-vnc" prefix_auto="1" extension_auto="1" />
+				<Option object_output="../bin/obj/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add directory="../source/linux" />
+					<Add directory="../source/linux/ffmpeg/include" />
+					<Add directory="../source/linux/libwebsockets/include" />
+				</Compiler>
+				<Linker>
+					<Add option="-static-libgcc" />
+					<Add library="pthread" />
+					<Add library="X11" />
+					<Add library="Xtst" />
+					<Add library="Xext" />
+					<Add library="../source/linux/ffmpeg/lib/libavformat.a" />
+					<Add library="../source/linux/ffmpeg/lib/libavcodec.a" />
+					<Add library="../source/linux/ffmpeg/lib/libswresample.a" />
+					<Add library="../source/linux/ffmpeg/lib/libswscale.a" />
+					<Add library="../source/linux/ffmpeg/lib/libavutil.a" />
+					<Add library="../source/linux/libwebsockets/lib/libwebsockets.a" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-m64" />
+			<Add option="-g" />
+		</Compiler>
+		<Linker>
+			<Add option="-m64" />
+		</Linker>
+		<Unit filename="../source/app.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../source/app.h" />
+		<Unit filename="../source/encoder.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../source/encoder.h" />
+		<Unit filename="../source/linux/grabber.c">
+			<Option compilerVar="CC" />
+			<Option target="linux" />
+		</Unit>
+		<Unit filename="../source/linux/grabber.h">
+			<Option target="linux" />
+		</Unit>
+		<Unit filename="../source/linux/input.c">
+			<Option compilerVar="CC" />
+			<Option target="linux" />
+		</Unit>
+		<Unit filename="../source/linux/input.h">
+			<Option target="linux" />
+		</Unit>
+		<Unit filename="../source/linux/os.c">
+			<Option compilerVar="CC" />
+			<Option target="linux" />
+		</Unit>
+		<Unit filename="../source/linux/os.h">
+			<Option target="linux" />
+		</Unit>
+		<Unit filename="../source/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../source/message_server.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../source/message_server.h" />
+		<Unit filename="../source/stream_server.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../source/stream_server.h" />
+		<Unit filename="../source/windows/desktop_duplication/grabber.c">
+			<Option compilerVar="CC" />
+			<Option target="windows-desktop-duplication" />
+		</Unit>
+		<Unit filename="../source/windows/desktop_duplication/grabber.h">
+			<Option target="windows-desktop-duplication" />
+		</Unit>
+		<Unit filename="../source/windows/gdi/grabber.c">
+			<Option compilerVar="CC" />
+			<Option target="windows-gdi" />
+		</Unit>
+		<Unit filename="../source/windows/gdi/grabber.h">
+			<Option target="windows-gdi" />
+		</Unit>
+		<Unit filename="../source/windows/input.c">
+			<Option compilerVar="CC" />
+			<Option target="windows-gdi" />
+			<Option target="windows-desktop-duplication" />
+		</Unit>
+		<Unit filename="../source/windows/input.h">
+			<Option target="windows-gdi" />
+			<Option target="windows-desktop-duplication" />
+		</Unit>
+		<Unit filename="../source/windows/os.c">
+			<Option compilerVar="CC" />
+			<Option target="windows-gdi" />
+			<Option target="windows-desktop-duplication" />
+		</Unit>
+		<Unit filename="../source/windows/os.h">
+			<Option target="windows-gdi" />
+			<Option target="windows-desktop-duplication" />
+		</Unit>
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

@@ -2,86 +2,135 @@
 #include <stdlib.h>
 
 #include "encoder.h"
+#include "app.h"
 
-#pragma comment(lib, "avcodec.lib")
-#pragma comment(lib, "avutil.lib")
-#pragma comment(lib, "swscale.lib")
+static int encoder_write_packet(encoder_t *self, uint8_t *buf, int buf_size)
+{
+    self->data_size = buf_size;
+
+    return buf_size;
+}
 
 encoder_t *encoder_create(int in_width, int in_height, int out_width, int out_height, int bitrate) {
+
 	encoder_t *self = (encoder_t *)malloc(sizeof(encoder_t));
 	memset(self, 0, sizeof(encoder_t));
 
 	self->in_width = in_width;
 	self->in_height = in_height;
-	self->out_width = out_width;
-	self->out_height = out_height;
-	
-	avcodec_register_all();
-	self->codec = avcodec_find_encoder(AV_CODEC_ID_MPEG1VIDEO);
-	
-	self->context = avcodec_alloc_context3(self->codec);
-	self->context->dct_algo = FF_DCT_FASTINT;
-	self->context->bit_rate = bitrate;
-	self->context->width = out_width;
-	self->context->height = out_height;
-	self->context->time_base.num = 1;
-	self->context->time_base.den = 30;
-	self->context->gop_size = 30;
-	self->context->max_b_frames = 0;
-	self->context->pix_fmt = PIX_FMT_YUV420P;
-	
-	avcodec_open2(self->context, self->codec, NULL);
-	
-	self->frame = avcodec_alloc_frame();
-	self->frame->format = PIX_FMT_YUV420P;
-	self->frame->width  = out_width;
-	self->frame->height = out_height;
-	self->frame->pts = 0;
-	
-	int frame_size = avpicture_get_size(PIX_FMT_YUV420P, out_width, out_height);
-	self->frame_buffer = malloc(frame_size);
-	avpicture_fill((AVPicture*)self->frame, (uint8_t*)self->frame_buffer, PIX_FMT_YUV420P, out_width, out_height);
-	
+	self->out_width = (out_width == 0) ? in_width : out_width;
+	self->out_height = (out_height == 0) ? in_height : out_height;
+
+    // Estimate bitrate
+	if (bitrate == 0) {
+        bitrate = self->out_width * 2000;
+	}
+
 	self->sws = sws_getContext(
-		in_width, in_height, AV_PIX_FMT_RGB32,
-		out_width, out_height, AV_PIX_FMT_YUV420P,
-		SWS_FAST_BILINEAR, 0, 0, 0
-	);
-	
+        self->in_width, self->in_height, AV_PIX_FMT_RGB32,
+        self->out_width, self->out_height, AV_PIX_FMT_YUV420P,
+        SWS_FAST_BILINEAR, 0, 0, 0
+    );
+    self->data = av_malloc(APP_FRAME_BUFFER_SIZE);
+
+    self->format_context = avformat_alloc_context();
+    self->format_context->oformat = av_guess_format("mpegts", NULL, NULL);
+
+    self->format_context->pb = avio_alloc_context(self->data, APP_FRAME_BUFFER_SIZE, 1, self, NULL, &encoder_write_packet, NULL);
+    if (!self->format_context->pb) {
+      exit(1);
+    }
+
+    self->video_codec = avcodec_find_encoder(AV_CODEC_ID_MPEG1VIDEO);
+    if (!self->video_codec) {
+        exit(1);
+    }
+
+    self->stream = avformat_new_stream(self->format_context, NULL);
+    if (!self->stream) {
+        exit(1);
+    }
+
+    self->stream->time_base = (AVRational){ 1, 60};
+    self->stream->id = self->format_context->nb_streams - 1;
+    self->codec_context = avcodec_alloc_context3(self->video_codec);
+    self->codec_context->thread_count = 1;
+    if (!self->codec_context) {
+        exit(1);
+    }
+
+    self->codec_context->bit_rate     = bitrate;
+    self->codec_context->codec_id     = AV_CODEC_ID_MPEG1VIDEO;
+    self->codec_context->dct_algo     = FF_DCT_FASTINT;
+    self->codec_context->width        = self->out_width;
+    self->codec_context->height       = self->out_height;
+    self->codec_context->time_base    = self->stream->time_base;
+    self->codec_context->max_b_frames = 0;
+    self->codec_context->gop_size     = 16;
+    self->codec_context->pix_fmt      = AV_PIX_FMT_YUV420P;
+    self->codec_context->mb_decision  = 2;
+
+    if (avcodec_open2(self->codec_context, self->video_codec, NULL) < 0) {
+        exit(1);
+    }
+
+    self->frame = av_frame_alloc();
+    if (!self->frame) {
+        exit(1);
+    }
+
+    self->frame->format = self->codec_context->pix_fmt;
+    self->frame->width  = self->codec_context->width;
+    self->frame->height = self->codec_context->height;
+
+    if (av_frame_get_buffer(self->frame, 32) < 0) {
+        exit(1);
+    }
+
+    if (avcodec_parameters_from_context(self->stream->codecpar, self->codec_context) < 0) {
+        exit(1);
+    }
+
+    if (avformat_write_header(self->format_context, NULL) < 0) {
+        exit(1);
+    }
+
 	return self;
 }
 
 void encoder_destroy(encoder_t *self) {
-	if( self == NULL ) { return; }
 
-	sws_freeContext(self->sws);
-	avcodec_close(self->context);
-	av_free(self->context);	
-	av_free(self->frame);
-	free(self->frame_buffer);
-	free(self);
+	if (self != NULL) {
+
+        sws_freeContext(self->sws);
+        avcodec_free_context(&self->codec_context);
+        av_frame_free(&self->frame);
+        av_free(self->data);
+
+        free(self);
+	}
 }
 
-void encoder_encode(encoder_t *self, void *rgb_pixels, void *encoded_data, size_t *encoded_size) {
-	uint8_t *in_data[1] = {(uint8_t *)rgb_pixels};
-	int in_linesize[1] = {self->in_width * 4};
-	sws_scale(self->sws, in_data, in_linesize, 0, self->in_height, self->frame->data, self->frame->linesize);
-		
-	int available_size = *encoded_size;
-	*encoded_size = 0;
-	self->frame->pts++;
-	
-	av_init_packet(&self->packet);
-	int success = 0;
-	avcodec_encode_video2(self->context, &self->packet, self->frame, &success);
-	if( success ) {
-		if( self->packet.size <= available_size ) {
-			memcpy(encoded_data, self->packet.data, self->packet.size);
-			*encoded_size = self->packet.size;
-		}
-		else {
-			printf("Frame too large for buffer (size: %d needed: %d)\n", available_size, self->packet.size);
-		}
-	}
-	av_free_packet(&self->packet);
+bool encoder_encode(encoder_t *self, void *rgb_pixels) {
+
+    AVPacket packet = {0};
+    int success;
+
+    if (av_frame_make_writable(self->frame) == 0) {
+
+        uint8_t *in_data[1] = {(uint8_t *)rgb_pixels};
+        int in_linesize[1] = {self->in_width * 4};
+        sws_scale(self->sws, in_data, in_linesize, 0, self->in_height, self->frame->data, self->frame->linesize);
+        self->frame->pts = self->next_pts++;
+
+        av_init_packet(&packet);
+
+        if (avcodec_send_frame(self->codec_context, self->frame) == 0 && avcodec_receive_packet(self->codec_context, &packet) == 0) {
+            av_packet_rescale_ts(&packet, self->codec_context->time_base, self->stream->time_base);
+
+            return av_interleaved_write_frame(self->format_context, &packet) == 0;
+        }
+    }
+
+    return false;
 }
