@@ -1,6 +1,11 @@
 #include <windows.h>
 #include <stdio.h>
 #include <direct.h>
+#include "os.h"
+
+bool os_is_display(int display_number) {
+    return true;
+}
 
 double os_get_time(void)
 {
@@ -16,7 +21,7 @@ double os_get_time(void)
 	return time_val / 1000000;
 }
 
-void os_set_clipboard(char *contents) {
+void os_set_clipboard(char *contents, int display_number) {
     const size_t len = strlen(contents) + 1;
     HGLOBAL mem = GlobalAlloc(GMEM_MOVEABLE, len);
     memcpy(GlobalLock(mem), contents, len);
@@ -27,7 +32,7 @@ void os_set_clipboard(char *contents) {
     CloseClipboard();
 }
 
-int os_sleep(int milliseconds) {
+void os_sleep(int milliseconds) {
     Sleep(milliseconds);
 }
 

@@ -1,4 +1,4 @@
-name: CI
+name: Linux
 
 on: [push]
 
@@ -16,7 +16,7 @@ jobs:
       run: |
         git clone --depth 1 --branch n4.2.1  git://source.ffmpeg.org/ffmpeg
         cd ffmpeg
-        ./configure --disable-everything --enable-encoder=mpeg1video --disable-shared --disable-hwaccels --disable-autodetect --enable-muxer=mpegts  --prefix=../source/linux/ffmpeg/
+        ./configure --disable-everything --enable-encoder=mpeg1video --disable-shared --disable-hwaccels --disable-autodetect --enable-muxer=mpegts --prefix=../source/linux/ffmpeg/
         make
         make install
 
@@ -28,7 +28,21 @@ jobs:
         cd build
         cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RELEASE -D LWS_WITH_SSL=OFF -D LWS_WITHOUT_TESTAPPS=ON -D LWS_WITH_SHARED=OFF -D LWS_WITH_STATIC=ON -D CMAKE_INSTALL_PREFIX=../../source/linux/libwebsockets ..
         make install
+        
+    - name: Prepare Linux Development 
+      run: | 
+        cd source/linux
+        zip -r ../../linux-development.zip ffmpeg libwebsockets
 
+    - name: Upload Linux Development
+      uses: svenstaro/upload-release-action@v1-release
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: ./linux-development.zip
+        asset_name: linux-development.zip
+        tag: autobuild
+        overwrite: true 
+        
     - name: Build JSMpeg-VNC
       run: |
         cd project/
@@ -38,13 +52,13 @@ jobs:
     - name: Prepare Release Asset
       run: | 
         cd bin 
-        zip ../jsmpeg-vnc.zip jsmpeg-vnc client client/index.html client/jsmpeg.min.js client/jsmpeg-vnc.js
+        zip ../jsmpeg-vnc-linux.zip jsmpeg-vnc client client/index.html client/jsmpeg.min.js client/jsmpeg-vnc.js
 
     - name: Upload Release Asset
       uses: svenstaro/upload-release-action@v1-release
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: ./jsmpeg-vnc.zip
-        asset_name: jsmpeg-vnc.zip
+        file: ./jsmpeg-vnc-linux.zip
+        asset_name: jsmpeg-vnc-linux.zip
         tag: autobuild
         overwrite: true

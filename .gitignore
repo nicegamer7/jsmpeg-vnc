@@ -1,9 +1,12 @@
 /bin/obj
-/project/jsmpeg-vnc.layout
-/project/jsmpeg-vnc.depend
 /bin/.clipboard
 /bin/jsmpeg-vnc
 /bin/jsmpeg-vnc.exe
+/bin/jsmpeg-vnc-gdi.exe
+/bin/jsmpeg-vnc-desktop-duplication.exe
+/project/jsmpeg-vnc.layout
+/project/jsmpeg-vnc.depend
 /source/linux/ffmpeg
-/project/bin/jsmpeg-vnc
 /source/linux/libwebsockets
+ffmpeg
+libwebsockets

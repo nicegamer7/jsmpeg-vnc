@@ -26,6 +26,7 @@ int main(int argc, char* argv[]) {
 		allow_input = 1,
         display_number = 0;
 
+    printf("%s\n", argv[0]);
     char *password = NULL;
 
 	// Parse command line options
@@ -41,7 +42,9 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+#ifdef __linux__
     XInitThreads();
+#endif
 
 	app_t *app = app_create(port, display_number, bit_rate, allow_input, password);
 

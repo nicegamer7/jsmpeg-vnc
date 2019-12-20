@@ -18,30 +18,12 @@ typedef struct client_t {
 } client_t;
 
 static int callback_websockets(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);
+static int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);
 
 static struct lws_protocols stream_server_protocols[] = {
-    {"http", lws_callback_http_dummy, 0,                     0},
-    {"ws",   callback_websockets,     sizeof(client_t), APP_FRAME_BUFFER_SIZE},
-    {NULL, NULL,                      0,                     0}
-};
-
-static struct lws_http_mount http_mount = {
-    .mount_next = NULL,
-    .mountpoint = "/",
-    .origin = "./client",
-    .def = "index.html",
-    .protocol = NULL,
-    .cgienv = NULL,
-    .interpret = NULL,
-    .cgi_timeout = 0,
-    .cache_max_age = 0,
-    .auth_mask = 0,
-    .cache_reusable = 0,
-    .cache_revalidate = 0,
-    .cache_intermediaries = 0,
-    .origin_protocol = LWSMPRO_FILE,
-    .mountpoint_len = 1,
-    .extra_mimetypes = NULL
+    {"http", callback_http,           0,                   0},
+    {"ws",   callback_websockets,     sizeof(client_t),    APP_FRAME_BUFFER_SIZE},
+    {NULL, NULL,                      0,                   0}
 };
 
 static char *stream_server_get_address() {
@@ -70,7 +52,6 @@ stream_server_t * stream_server_create(int port, char *password) {
     info.gid = -1;
     info.uid = -1;
     info.protocols = stream_server_protocols;
-    info.mounts = &http_mount;
     info.user = self;
 
     self->context = lws_create_context(&info);
@@ -118,6 +99,24 @@ void stream_server_update(stream_server_t *self) {
 
 void stream_server_idle(stream_server_t * self) {
     lws_service(self->context, 1000);
+}
+
+static int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len)
+{
+
+    if (reason == LWS_CALLBACK_HTTP) {
+        if (strcmp((char *)in, "/jsmpeg.min.js") == 0) {
+            return lws_serve_http_file(wsi, "client/jsmpeg.min.js", "text/javascript; charset=utf-8", NULL, 0);
+        }
+        if (strcmp((char *)in, "/jsmpeg-vnc.js") == 0 ) {
+            return lws_serve_http_file(wsi, "client/jsmpeg-vnc.js", "text/javascript; charset=utf-8", NULL, 0);
+        }
+        if (strcmp((char *)in, "/") == 0 ) {
+            return lws_serve_http_file(wsi, "client/index.html", "text/html; charset=utf-8", NULL, 0);
+        }
+    }
+
+    return lws_callback_http_dummy(wsi, reason, user, in, len);
 }
 
 static int callback_websockets(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len)

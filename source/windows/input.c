@@ -93,3 +93,12 @@ void input_key_press(input_t *self, int key, bool down)
 
     keybd_event(key, scan_code, flags, 0);
 }
+
+void input_get_cursor_position(input_t *self, int *x, int *y) {
+
+    POINT cursor;
+    GetCursorPos(&cursor);
+
+    *x = cursor.x;
+    *y = cursor.y;
+}

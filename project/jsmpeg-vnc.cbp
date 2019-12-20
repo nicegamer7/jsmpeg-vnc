@@ -7,50 +7,52 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="windows-gdi">
-				<Option output="../bin/jsmpeg-vnc" prefix_auto="1" extension_auto="1" />
+				<Option output="../bin/jsmpeg-vnc-gdi" prefix_auto="1" extension_auto="1" />
 				<Option object_output="../bin/obj/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add directory="../source/windows/ffmpeg/include" />
-					<Add directory="../source/windows/libwebsocket/include" />
 					<Add directory="../source/windows/gdi" />
 					<Add directory="../source/windows" />
+					<Add directory="../source/windows/libwebsockets/include" />
 				</Compiler>
 				<Linker>
 					<Add option="-static" />
+					<Add library="../source/windows/ffmpeg/lib/libavformat.a" />
+					<Add library="../source/windows/ffmpeg/lib/libavcodec.a" />
+					<Add library="../source/windows/ffmpeg/lib/libswresample.a" />
+					<Add library="../source/windows/ffmpeg/lib/libswscale.a" />
+					<Add library="../source/windows/ffmpeg/lib/libavutil.a" />
+					<Add library="../source/windows/libwebsockets/lib/libwebsockets_static.a" />
 					<Add library="gdi32" />
 					<Add library="ws2_32" />
-					<Add library="../source/windows/libwebsocket/lib/libwebsockets.dll.a" />
-					<Add library="../source/windows/ffmpeg/lib/avcodec.lib" />
-					<Add library="../source/windows/ffmpeg/lib/swscale.lib" />
-					<Add library="../source/windows/ffmpeg/lib/avformat.lib" />
-					<Add library="../source/windows/ffmpeg/lib/swresample.lib" />
-					<Add library="../source/windows/ffmpeg/lib/avutil.lib" />
+					<Add library="Bcrypt" />
 				</Linker>
 			</Target>
 			<Target title="windows-desktop-duplication">
-				<Option output="../bin/jsmpeg-vnci" prefix_auto="1" extension_auto="1" />
+				<Option output="../bin/jsmpeg-vnc-desktop-duplication" prefix_auto="1" extension_auto="1" />
 				<Option object_output="../bin/obj/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add directory="../source/windows/ffmpeg/include" />
-					<Add directory="../source/windows/libwebsocket/include" />
 					<Add directory="../source/windows/desktop_duplication" />
 					<Add directory="../source/windows" />
+					<Add directory="../source/windows/libwebsockets/include" />
 				</Compiler>
 				<Linker>
 					<Add option="-static" />
+					<Add library="../source/windows/ffmpeg/lib/libavformat.a" />
+					<Add library="../source/windows/ffmpeg/lib/libavcodec.a" />
+					<Add library="../source/windows/ffmpeg/lib/libswresample.a" />
+					<Add library="../source/windows/ffmpeg/lib/libswscale.a" />
+					<Add library="../source/windows/ffmpeg/lib/libavutil.a" />
+					<Add library="../source/windows/libwebsockets/lib/libwebsockets_static.a" />
 					<Add library="gdi32" />
 					<Add library="ws2_32" />
+					<Add library="Bcrypt" />
 					<Add library="d3d11" />
-					<Add library="../source/windows/libwebsocket/lib/libwebsockets.dll.a" />
-					<Add library="../source/windows/ffmpeg/lib/avcodec.lib" />
-					<Add library="../source/windows/ffmpeg/lib/swscale.lib" />
-					<Add library="../source/windows/ffmpeg/lib/avformat.lib" />
-					<Add library="../source/windows/ffmpeg/lib/swresample.lib" />
-					<Add library="../source/windows/ffmpeg/lib/avutil.lib" />
 				</Linker>
 			</Target>
 			<Target title="linux">

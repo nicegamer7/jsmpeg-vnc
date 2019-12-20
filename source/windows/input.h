@@ -20,6 +20,7 @@ void input_mouse_right_button(input_t *self, bool down);
 void input_mouse_middle_button(input_t *self, bool down);
 void input_mouse_scroll(input_t *self, int amount);
 void input_key_press(input_t *self, int key, bool down);
+void input_get_cursor_position(input_t *self, int *x, int *y);
 
 #endif
 
