@@ -4,7 +4,7 @@
 #include "app.h"
 #include "os.h"
 
-app_t *app_create(int port, int display_number, int bit_rate, int allow_input, char *password)
+app_t *app_create(int port, int display_number, int bit_rate, int allow_input, char *password, int buffer_size, int gop)
 {
 	app_t *self = (app_t *)malloc(sizeof(app_t));
 	memset(self, 0, sizeof(app_t));
@@ -17,11 +17,14 @@ app_t *app_create(int port, int display_number, int bit_rate, int allow_input, c
         exit(1);
     }
 
+    self->buffer_size = buffer_size;
+    self->gop = gop;
+
     self->input = input_create(self->display_number);
     self->grabber = grabber_create(self->display_number);
-    self->encoder = encoder_create(self->grabber->width, self->grabber->height, 0, 0, self->bit_rate);
+    self->encoder = encoder_create(self->grabber->width, self->grabber->height, 0, 0, self->bit_rate, buffer_size, gop);
 
-    self->stream_server = stream_server_create(port, password);
+    self->stream_server = stream_server_create(port, password, buffer_size);
 
     self->message_server = message_server_create(port + 1, password);
     self->message_server->user = self;
@@ -82,7 +85,7 @@ void app_on_change_display(app_t *self, int value) {
         self->display_number = value;
         self->input = input_create(self->display_number);
         self->grabber = grabber_create(self->display_number);
-        self->encoder = encoder_create(self->grabber->width, self->grabber->height, 0, 0, self->bit_rate);
+        self->encoder = encoder_create(self->grabber->width, self->grabber->height, 0, 0, self->bit_rate, self->buffer_size, self->gop);
 
         pthread_mutex_unlock(&self->mutex_input);
         pthread_mutex_unlock(&self->mutex_streaming);

@@ -12,7 +12,7 @@ typedef struct {
   // nothing
 } input_t;
 
-input_t *input_create(char *display_name);
+input_t *input_create(int display_number);
 void input_destroy(input_t *self);
 void input_mouse_move(input_t *self, int x, int y);
 void input_mouse_left_button(input_t *self, bool down);

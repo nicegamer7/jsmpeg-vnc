@@ -16,7 +16,7 @@ var handleSocketMessage = function(source, message) {
 	var display = view.getInt32(0, true);
 	var x = view.getInt32(4, true);
 	var y = view.getInt32(8, true);
-	
+
 	if (displayUpdating) { 
 		displayUpdating = (display != displayParameter);
 		if (!displayUpdating) {
@@ -44,6 +44,11 @@ var handleWindowResize = function() {
 	canvas.style.height = (canvas.height > window.innerHeight) ? '100%' : canvas.height + 'px';	
 }
 
+function getCookie(name) {
+    var v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+    return v ? v[2] : null;
+}
+
 var canvas = document.getElementById('video-canvas');
 var cursor = document.getElementById("cursor");
 
@@ -59,7 +64,7 @@ var player = new JSMpeg.Player(playerURL, { canvas: canvas,
 											protocols: "ws",
 											reconnectInterval: null,
 											audio: false,
-											videoBufferSize: 512 * 768,
+											videoBufferSize: getCookie('videoBufferSize'),
 											onVideoDecodeSequenceHeader: handleWindowResize,
 											onSocketMessage: handleSocketMessage
 										  });

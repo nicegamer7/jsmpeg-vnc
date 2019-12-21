@@ -7,14 +7,15 @@
 #include "grabber.h"
 #include "input.h"
 
-#define APP_FRAME_BUFFER_SIZE (512*768)
-
 typedef struct {
 	encoder_t *encoder;
 	grabber_t *grabber;
 	stream_server_t *stream_server;
 	message_server_t *message_server;
 	input_t *input;
+
+	int buffer_size;
+	int gop;
 
     pthread_mutex_t mutex_streaming;
 	pthread_mutex_t mutex_input;
@@ -23,7 +24,7 @@ typedef struct {
 	int bit_rate;
  } app_t;
 
-app_t *app_create(int port, int display_number, int bit_rate, int allow_input, char *password);
+app_t *app_create(int port, int display_number, int bit_rate, int allow_input, char *password, int buffer_size, int gop);
 void app_destroy(app_t *self);
 void app_run(app_t *self, int target_fps);
 

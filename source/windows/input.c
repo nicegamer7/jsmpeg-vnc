@@ -1,6 +1,6 @@
 #include "input.h"
 
-input_t *input_create(char *display_name)
+input_t *input_create(int display_name)
 {
 	input_t *self = (input_t *) malloc(sizeof(input_t));
   	memset(self, 0, sizeof(input_t));

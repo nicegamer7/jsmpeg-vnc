@@ -3,25 +3,25 @@
 
 #include "libwebsockets/include/libwebsockets.h"
 
-typedef struct stream_frame_t {
+typedef struct stream_server_t {
+	struct lws_context *context;
+	struct lws_vhost* vhost;
+    struct lws_protocols protocols[3];
+
     int display_number;
     int cursor_x;
     int cursor_y;
-    char data[1024 * 1024];
-} stream_frame_t;
 
-typedef struct stream_server_t {
-	struct lws_context *context;
-	struct stream_frame_t *frame;
-	int frame_size;
-    char *data;
+	int buffer_size;
     int port;
     int active_connections;
+
     char *address;
 	char *password;
+	char cookies[256];
 } stream_server_t;
 
-stream_server_t *stream_server_create(int port, char *password);
+stream_server_t *stream_server_create(int port, char *password, int buffer_size);
 void stream_server_destroy(stream_server_t *self);
 void stream_server_broadcast(stream_server_t *self, void *data, int data_size, int display_number, int cursor_x, int cursor_y);
 void stream_server_update(stream_server_t *self);

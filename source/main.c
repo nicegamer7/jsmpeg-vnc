@@ -4,15 +4,18 @@
 
 void exit_usage(char *self_name) {
 	printf(
-		"Usage: %s [options] <window name>\n\n"
+        "\n"
+		"Usage: %s [options]\n\n"
 
 		"Options:\n"
-		"  -b bitrate in kilobit/s (default: estimated by output size)\n"
-		"  -f target framerate (default: 60)\n"
-		"  -p port (default: 8080)\n"
-		"  -i enable/disable remote input. E.g. -i 0 (default: 1)\n"
-        "  -a authentication password. E.g.: -a pass\n"
-        "  -d display number to capture. E.g.: -d 1\n\n",
+		"  -bitrate               bitrate in kilobit/s. (default: estimated by output size)\n"
+		"  -fps                   target framerate. (default: 60)\n"
+		"  -port                  streaming port. (default: 8080)\n"
+		"  -allow_input           enable/disable remote input. (default: 1)\n"
+        "  -password password     required for socket authentication. (default: no password)\n"
+        "  -display_number        display number to capture. (default: 0)\n"
+        "  -gop                   group of pictures. (default 18)\n"
+        "  -video_buffer_size     video buffer size. (default 768x768)\n",
 		self_name
 	);
 	exit(0);
@@ -24,21 +27,55 @@ int main(int argc, char* argv[]) {
 		fps = 60,
 		port = 8080,
 		allow_input = 1,
-        display_number = 0;
+        display_number = 0,
+        video_buffer_size = 768 * 768,
+        gop = 18;
 
-    printf("%s\n", argv[0]);
     char *password = NULL;
 
-	// Parse command line options
-	for (int i = 1; i < argc; i+=2) {
-		switch (argv[i][1]) {
-			case 'b': bit_rate = atoi(argv[i+1]) * 1000; break;
-			case 'p': port = atoi(argv[i+1]); break;
-			case 'f': fps = atoi(argv[i+1]); break;
-			case 'i': allow_input = atoi(argv[i+1]); break;
-			case 'd': display_number = atoi(argv[i+1]); break;
-			case 'a': password = argv[i+1]; break;
-            default:  exit_usage(argv[0]);
+	for (int i = 1; i < argc; i += 2) {
+
+        if (argv[i][0] != '-') {
+			exit_usage(argv[0]);
+		}
+
+        char *parameter = &argv[i][1];
+        char *value = argv[i + 1];
+
+        if (strcmp(parameter, "gop") == 0) {
+            gop = atoi(value);
+        }
+        else
+		if (strcmp(parameter, "bitrate") == 0) {
+            bit_rate = atoi(value) * 1000;
+		}
+		else
+		if (strcmp(parameter, "fps") == 0) {
+            fps = atoi(value);
+		}
+		else
+		if (strcmp(parameter, "password") == 0) {
+            password = value;
+		}
+		else
+		if (strcmp(parameter, "display_number") == 0) {
+            display_number = atoi(value);
+		}
+		else
+		if (strcmp(parameter, "allow_input") == 0) {
+            allow_input = atoi(value);
+		}
+		else
+        if (strcmp(parameter, "port") == 0) {
+            port = atoi(value);
+		}
+		else
+        if (strcmp(parameter, "video_buffer_size") == 0) {
+            int left, right;
+            sscanf(value, "%dx%d", &left, &right);
+            video_buffer_size = left * right;
+		} else {
+            exit_usage(argv[0]);
 		}
 	}
 
@@ -46,14 +83,14 @@ int main(int argc, char* argv[]) {
     XInitThreads();
 #endif
 
-	app_t *app = app_create(port, display_number, bit_rate, allow_input, password);
+	app_t *app = app_create(port, display_number, bit_rate, allow_input, password, video_buffer_size, gop);
 
 	printf(
         "Dimensions: %dx%d\n"
         "Bitrate: %d kb/s\n"
 		"Server started on: http://%s:%d\n",
 		app->grabber->width, app->grabber->height,
-		(int) app->encoder->codec_context->bit_rate / 1000,
+		app->encoder->codec_context->bit_rate / 1000,
 		app->stream_server->address, app->stream_server->port
 	);
 

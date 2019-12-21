@@ -2,7 +2,6 @@
 #include <stdlib.h>
 
 #include "encoder.h"
-#include "app.h"
 
 static int encoder_write_packet(encoder_t *self, uint8_t *buf, int buf_size)
 {
@@ -11,7 +10,7 @@ static int encoder_write_packet(encoder_t *self, uint8_t *buf, int buf_size)
     return buf_size;
 }
 
-encoder_t *encoder_create(int in_width, int in_height, int out_width, int out_height, int bitrate) {
+encoder_t *encoder_create(int in_width, int in_height, int out_width, int out_height, int bitrate, int buffer_size, int gop) {
 
 	encoder_t *self = (encoder_t *)malloc(sizeof(encoder_t));
 	memset(self, 0, sizeof(encoder_t));
@@ -31,12 +30,12 @@ encoder_t *encoder_create(int in_width, int in_height, int out_width, int out_he
         self->out_width, self->out_height, AV_PIX_FMT_YUV420P,
         SWS_FAST_BILINEAR, 0, 0, 0
     );
-    self->data = av_malloc(APP_FRAME_BUFFER_SIZE);
+    self->data = av_malloc(buffer_size);
 
     self->format_context = avformat_alloc_context();
     self->format_context->oformat = av_guess_format("mpegts", NULL, NULL);
 
-    self->format_context->pb = avio_alloc_context(self->data, APP_FRAME_BUFFER_SIZE, 1, self, NULL, &encoder_write_packet, NULL);
+    self->format_context->pb = avio_alloc_context(self->data, buffer_size, 1, self, NULL, &encoder_write_packet, NULL);
     if (!self->format_context->pb) {
       exit(1);
     }
@@ -51,7 +50,7 @@ encoder_t *encoder_create(int in_width, int in_height, int out_width, int out_he
         exit(1);
     }
 
-    self->stream->time_base = (AVRational){ 1, 60};
+    self->stream->time_base = (AVRational){ 1, 60 };
     self->stream->id = self->format_context->nb_streams - 1;
     self->codec_context = avcodec_alloc_context3(self->video_codec);
     self->codec_context->thread_count = 1;
@@ -66,9 +65,8 @@ encoder_t *encoder_create(int in_width, int in_height, int out_width, int out_he
     self->codec_context->height       = self->out_height;
     self->codec_context->time_base    = self->stream->time_base;
     self->codec_context->max_b_frames = 0;
-    self->codec_context->gop_size     = 16;
+    self->codec_context->gop_size     = gop;
     self->codec_context->pix_fmt      = AV_PIX_FMT_YUV420P;
-    self->codec_context->mb_decision  = 2;
 
     if (avcodec_open2(self->codec_context, self->video_codec, NULL) < 0) {
         exit(1);
@@ -94,6 +92,8 @@ encoder_t *encoder_create(int in_width, int in_height, int out_width, int out_he
     if (avformat_write_header(self->format_context, NULL) < 0) {
         exit(1);
     }
+
+    av_log_set_level(AV_LOG_QUIET);
 
 	return self;
 }

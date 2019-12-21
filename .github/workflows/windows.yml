@@ -50,9 +50,9 @@ jobs:
       shell: bash
       run: |
         cd project
-        ./cbp2make -in jsmpeg-vnc.cbp -out makefile -targets windows-gdi
+        ../.github/cbp2make.exe -in jsmpeg-vnc.cbp -out makefile -targets windows-gdi
         make
-        ./cbp2make -in jsmpeg-vnc.cbp -out makefile -targets windows-desktop-duplication
+        ../.github/cbp2make.exe -in jsmpeg-vnc.cbp -out makefile -targets windows-desktop-duplication
         make
 
     - name: Prepare JSMpeg-VNC Upload

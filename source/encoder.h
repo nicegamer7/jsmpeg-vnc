@@ -24,9 +24,11 @@ typedef struct {
     AVFormatContext *format_context;
     AVCodec *video_codec;
     AVStream *stream;
+
+
 } encoder_t;
 
-encoder_t *encoder_create(int in_width, int in_height, int out_width, int out_height, int bitrate);
+encoder_t *encoder_create(int in_width, int in_height, int out_width, int out_height, int bitrate, int buffer_size, int gop);
 void encoder_destroy(encoder_t *self);
 void encoder_write(encoder_t *self, void *data, int *size);
 void encoder_release(encoder_t *self);
