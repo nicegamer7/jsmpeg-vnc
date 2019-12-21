@@ -231,7 +231,7 @@ void app_run(app_t *self, int target_fps)
                     frame_interval = 0;
                 }
 
-                printf("(fps: %2d) (grabbing: %.2f ms) (encoding %.2f ms)\r", fps, grab_time, encode_time);
+                printf("FPS: %2d (grabbing: %.2f ms) (encoding %.2f ms)\r", fps, grab_time, encode_time);
 
                 fflush(stdout);
             },

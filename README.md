@@ -1,3 +1,5 @@
+## JSMpeg-VNC
+
 ```
 Options:
   -bitrate               bitrate in kilobit/s. (default: estimated by output size)
@@ -19,6 +21,8 @@ Options:
 - Display Changing
 - Shared Clipboard
 - File Uploading
+- Encoder Options
+- Desktop Duplication
 
 ##
 
@@ -33,7 +37,7 @@ This fork uses the latest JSMpeg used with some additions found [here](https://g
 ##
 
 #### Linux Support
-This fork only supports Linux currently. Most of the Windows code already exists in the repository, I just haven't got round to testing and setting up automated building.
+Linux support has been added!
 
 ##
 
@@ -50,9 +54,9 @@ In addition to above, all incoming messages are now serviced on a separate threa
 ##
 
 #### Display Changing:
-Support has been added to change displays client sided. Append `?display=50` to the URL to switch to X display 50. 
+Support has been added to change displays client sided. Append `?display=50` to the URL to switch to display number 50.
 
-For example another display can be created using X virtual framebuffer. You'll also likely also want to spawn a desktop enviroment, this can be done the same way VNC servers do it with `~/vnc/xstartup` file.
+For example another display can be created using X virtual framebuffer. You'll also likely also want to spawn a desktop enviroment, this can be done the same way VNC servers do it with `~/.vnc/xstartup` file.
 
 Example xstartup for xfce4:
 ```
@@ -68,17 +72,30 @@ exec dbus-launch startxfce4
 
 Example to create another display with a desktop environment:
 ```
-Xcfb: 50 &
+Xvfb: 50 &
 DISPLAY=:50 ./xstartup &
 ```
 
 ##
 
 #### Shared Clipboard:
-Clipboard is shared when `ctrl + c` or `ctrl + v` is pressed. You'll need to install `xclip` for this to work :`sudo apt-get install xclip`
+Clipboard is shared when `ctrl + c` or `ctrl + v` is pressed. If on Linux `xclip` must be installed: `sudo apt-get install xclip`.
 
 ##
 
 #### File Uploading:
-Drag-drop a file onto the player and it will upload it to the servers `/home/user/Downloads/` directory. While a upload is in progress sending input will not work.
+Drag-drop a file onto the player to upload to the servers `Downloads/` directory. While uploading is in progress, no input will be sent as the socket likely has a lot of data queued.
 
+##
+
+#### Encoder Options:
+
+I've added group of pictures `-gop` and video buffer size `-video_buffer_size` as command line options:
+ - Higher the group of pictures seems to improve quality but increases latency. 
+ - Video buffer size is the maximum size a frame can be. This might need to be increased for very high bitrates. This also sets JSMpeg's `videoBufferSize` browser sided.
+ 
+##
+
+#### Desktop Duplication:
+
+On Windows a desktop duplication binary exists. This utilizes the desktop duplication api which massively increases the speed of capturing the screen. Requires at least Windows 8.
