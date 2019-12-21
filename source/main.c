@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
 		app->stream_server->address, app->stream_server->port
 	);
 
-	app_run(app, fps + 1);
+	app_run(app, fps);
 	app_destroy(app);
 
 	return 0;

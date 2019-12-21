@@ -177,13 +177,20 @@ void app_on_upload_file(app_t *self, char *filename, int contents_size, char *co
     os_save_upload(contents, contents_size, filename);
 }
 
+#define timer_measure(measure, average) { \
+    double start = os_get_time();         \
+    measure;                              \
+    double stop = os_get_time();          \
+    average -= average / 30;              \
+    average += (stop - start) / 30;       \
+}
+
 void app_run(app_t *self, int target_fps)
 {
-    double frame_interval = (1000 / target_fps);
-    double fps = target_fps;
-    double start, stop;
-    double delta;
-
+    double frame_interval = 0;
+    int fps;
+    double grab_time, encode_time, frame_time;
+    int64_t frames = 0;
     int x, y;
 
     while (true) {
@@ -192,40 +199,45 @@ void app_run(app_t *self, int target_fps)
             stream_server_idle(self->stream_server);
         }
 
-        start = os_get_time();
-        delta = (start - stop);
+        timer_measure(
 
-        if (delta > frame_interval) {
-
-            fps = fps * 0.95f + 50.0f / delta;
-
-            if (fps > target_fps) {
-                frame_interval = frame_interval + 0.05f;
-            }
-            if (fps < target_fps && frame_interval > 0) {
-                frame_interval = frame_interval - 0.05f;
+            if (frame_interval > 0) {
+                os_sleep(frame_interval);
             }
 
             pthread_mutex_lock(&self->mutex_streaming);
 
             input_get_cursor_position(self->input, &x, &y);
 
-            grabber_grab(self->grabber);
-            encoder_encode(self->encoder, self->grabber->buffer);
+            timer_measure(grabber_grab(self->grabber), grab_time);
+            timer_measure(encoder_encode(self->encoder, self->grabber->buffer), encode_time);
 
             stream_server_broadcast(self->stream_server, self->encoder->data, self->encoder->data_size, self->display_number, x, y);
             stream_server_update(self->stream_server);
 
             pthread_mutex_unlock(&self->mutex_streaming);
 
-            stop = os_get_time();
+            if ((frames++ > target_fps) && (frames % 4 == 0)) {
 
-            printf("FPS: %d\r", (int)fps);
+                fps = (int) (1000.0f / frame_time);
 
-            fflush(stdout);
-        }
+                if (fps > target_fps) {
+                    frame_interval += 0.50f;
+                }
+                if (fps < target_fps) {
+                    frame_interval -= 0.50f;
+                }
+                if (frame_interval < 0) {
+                    frame_interval = 0;
+                }
 
-        os_sleep(1);
+                printf("(fps: %2d) (grabbing: %.2f ms) (encoding %.2f ms)\r", fps, grab_time, encode_time);
+
+                fflush(stdout);
+            },
+
+            frame_time
+        );
 
     }
 }
