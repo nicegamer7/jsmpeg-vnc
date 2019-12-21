@@ -40,7 +40,7 @@ void grabber_destroy(grabber_t *self)
 	}
 
     SelectObject(self->memoryDC, self->obj);
-    DeleteDC(self->windowDC);
+    ReleaseDC(self->window, self->windowDC);
 
 	free(self->buffer);
 	free(self);
