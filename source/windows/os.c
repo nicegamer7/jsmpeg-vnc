@@ -55,11 +55,12 @@ void os_sleep(int milliseconds) {
 }
 
 void os_save_upload(char *contents, int size, char *filename) {
-    _mkdir("uploads");
+    char destination[256] = {0};
+    sprintf(destination, "%s/Downloads/%s", getenv("HOMEPATH"), filename);
 
-    FILE *file = fopen(filename, "w+");
+    FILE *file = fopen(destination, "w+");
     fwrite(contents, sizeof(char), size, file);
     fclose(file);
 
-    printf("\nFile uploaded: %s\n", filename);
+    printf("\nFile uploaded: %s\n", destination);
 }

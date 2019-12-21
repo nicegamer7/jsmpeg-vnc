@@ -96,7 +96,6 @@ void os_sleep(int milliseconds)
 
 void os_save_upload(char *contents, int size, char *filename)
 {
-
     char destination[256] = {0};
     sprintf(destination, "%s/Downloads/%s", getenv("HOME"), filename);
 
