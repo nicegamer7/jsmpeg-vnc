@@ -64,6 +64,8 @@ char *os_get_clipboard(int display_number)
         return buffer;
     } else {
         printf("ERROR: Unable to get clipboard. Install xclip.\n");
+
+        return NULL;
     }
 }
 

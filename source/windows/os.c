@@ -32,6 +32,24 @@ void os_set_clipboard(char *contents, int display_number) {
     CloseClipboard();
 }
 
+char *os_get_clipboard(int display_number) {
+
+    if (OpenClipboard(0)) {
+        HANDLE clipboardHandle = GetClipboardData(CF_TEXT);
+        char *contents = GlobalLock(clipboardHandle);
+        char *result = malloc(strlen(contents) + 1);
+
+        strcpy(result, contents);
+
+        GlobalUnlock(clipboardHandle);
+        CloseClipboard();
+
+        return result;
+    }
+
+    return NULL;
+}
+
 void os_sleep(int milliseconds) {
     Sleep(milliseconds);
 }

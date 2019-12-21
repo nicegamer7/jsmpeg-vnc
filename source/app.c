@@ -94,12 +94,12 @@ void app_on_change_display(app_t *self, int value) {
 
 void app_on_paste(app_t *self, char *contents)
 {
-  //  os_set_clipboard(contents, self->display_number);
+    os_set_clipboard(contents, self->display_number);
 }
 
 void app_on_copy(app_t *self, char **out_clipboard)
 {
- //   *out_clipboard = os_get_clipboard(self->display_number);
+    *out_clipboard = os_get_clipboard(self->display_number);
 }
 
 void app_on_key_down(app_t *self, int code)

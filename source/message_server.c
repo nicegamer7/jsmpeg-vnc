@@ -126,16 +126,18 @@ void message_server_process(message_server_t *self, client_t *client, char *data
             if (self->on_copy != NULL) {
                 self->on_copy(self->user, &clipboard);
 
-                int data_size = LWS_SEND_BUFFER_PRE_PADDING + strlen(clipboard) + 4;
-                void *data = malloc(data_size);
+                if (clipboard != NULL) {
+                    int data_size = LWS_SEND_BUFFER_PRE_PADDING + strlen(clipboard) + 4;
+                    void *data = malloc(data_size);
 
-                memcpy(data + LWS_SEND_BUFFER_PRE_PADDING, &message, 4);
-                memcpy(data + LWS_SEND_BUFFER_PRE_PADDING + 4, clipboard, strlen(clipboard));
+                    memcpy(data + LWS_SEND_BUFFER_PRE_PADDING, &message, 4);
+                    memcpy(data + LWS_SEND_BUFFER_PRE_PADDING + 4, clipboard, strlen(clipboard));
 
-                lws_callback_all_protocol_vhost_args(lws_get_vhost(client->wsi), lws_get_protocol(client->wsi), LWS_CALLBACK_USER, data, data_size);
+                    lws_callback_all_protocol_vhost_args(lws_get_vhost(client->wsi), lws_get_protocol(client->wsi), LWS_CALLBACK_USER, data, data_size);
 
-                free(data);
-                free(clipboard);
+                    free(data);
+                    free(clipboard);
+                }
             }
         }
         break;
