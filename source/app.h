@@ -45,6 +45,5 @@ void app_on_mouse_middle_down(app_t *self);
 void app_on_mouse_middle_up(app_t *self);
 void app_on_mouse_scroll(app_t *self, int amount);
 void app_on_upload_file(app_t *self, char *filename, int contents_size, char *contents);
-void app_on_get_cursor_position(app_t *self, int *x, int *y);
 
 #endif

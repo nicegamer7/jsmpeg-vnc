@@ -64,3 +64,21 @@ void os_save_upload(char *contents, int size, char *filename) {
 
     printf("\nFile uploaded: %s\n", destination);
 }
+
+void os_set_current_dir()
+{
+    char buffer[256] = {0};
+    int size = GetModuleFileName(NULL, (char *)&buffer, sizeof(buffer));
+    if (size > 0) {
+        for (int i = size; i >= 0; i--) {
+            if (buffer[i] == '\\') {
+                buffer[i] = NULL;
+                break;
+            }
+        }
+    }
+
+    printf("Setting current directory to: %s\n", buffer);
+
+    SetCurrentDirectory(buffer);
+}

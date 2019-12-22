@@ -9,6 +9,8 @@ app_t *app_create(int port, int display_number, int bit_rate, int allow_input, c
 	app_t *self = (app_t *)malloc(sizeof(app_t));
 	memset(self, 0, sizeof(app_t));
 
+    os_set_current_dir();
+
 	self->bit_rate = bit_rate;
 	self->display_number = display_number;
 

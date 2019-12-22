@@ -12,6 +12,7 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
+					<Add directory="../source" />
 					<Add directory="../source/windows/ffmpeg/include" />
 					<Add directory="../source/windows/gdi" />
 					<Add directory="../source/windows" />
@@ -36,6 +37,7 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
+					<Add directory="../source" />
 					<Add directory="../source/windows/ffmpeg/include" />
 					<Add directory="../source/windows/desktop_duplication" />
 					<Add directory="../source/windows" />
@@ -61,6 +63,7 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
+					<Add directory="../source" />
 					<Add directory="../source/linux" />
 					<Add directory="../source/linux/ffmpeg/include" />
 					<Add directory="../source/linux/libwebsockets/include" />
@@ -113,9 +116,6 @@
 			<Option compilerVar="CC" />
 			<Option target="linux" />
 		</Unit>
-		<Unit filename="../source/linux/os.h">
-			<Option target="linux" />
-		</Unit>
 		<Unit filename="../source/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -123,6 +123,7 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../source/message_server.h" />
+		<Unit filename="../source/os.h" />
 		<Unit filename="../source/stream_server.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -152,10 +153,6 @@
 		</Unit>
 		<Unit filename="../source/windows/os.c">
 			<Option compilerVar="CC" />
-			<Option target="windows-gdi" />
-			<Option target="windows-desktop-duplication" />
-		</Unit>
-		<Unit filename="../source/windows/os.h">
 			<Option target="windows-gdi" />
 			<Option target="windows-desktop-duplication" />
 		</Unit>
