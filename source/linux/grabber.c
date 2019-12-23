@@ -16,9 +16,13 @@ grabber_t *grabber_create(int display_number) {
 
     self->display = XOpenDisplay(display_name);
     if (self->display == NULL) {
-        free(self);
+        printf("Grabber: Error opening display: %s\n", display_name);
+        exit(1);
+    }
 
-        return NULL;
+    if (!XShmQueryExtension(self->display)) {
+        printf("Grabber: XShm extension not present\n");
+        exit(1);
     }
 
     self->window = XDefaultRootWindow(self->display);
@@ -28,14 +32,34 @@ grabber_t *grabber_create(int display_number) {
 
 	self->width = attri.width;
 	self->height = attri.height;
-	self->image = XShmCreateImage(self->display, XDefaultVisual(self->display, 0), XDefaultDepth(self->display, 0), ZPixmap, NULL, &self->shminfo, self->width, self->height);
-	self->shminfo.shmid = shmget(IPC_PRIVATE, self->image->bytes_per_line * self->image->height, IPC_CREAT | 0777);
-	self->shminfo.shmaddr = self->image->data = (char *)shmat(self->shminfo.shmid, 0, 0);
+
+	self->shminfo.shmid = shmget(IPC_PRIVATE, self->width * self->height * 4, IPC_CREAT | 0777);
+	if (self->shminfo.shmid < 0) {
+        printf("Grabber: shmget returned NULL\n");
+        exit(1);
+	}
+
+	self->shminfo.shmaddr = shmat(self->shminfo.shmid, 0, 0);
+	if (self->shminfo.shmaddr == NULL) {
+        printf("Grabber: shmaddr returned NULL\n");
+        exit(1);
+	}
+
+	shmctl(self->shminfo.shmid, IPC_RMID, 0);
+
 	self->shminfo.readOnly = False;
 
+	self->image = XShmCreateImage(self->display, XDefaultVisual(self->display, 0), XDefaultDepth(self->display, 0), ZPixmap, NULL, &self->shminfo, self->width, self->height);
+	if (self->image == NULL) {
+        printf("Grabber: XShmCreateImage returned NULL\n");
+        exit(1);
+	}
+
+	self->image->data = (unsigned int*) self->shminfo.shmaddr;
     self->buffer = self->image->data;
 
 	XShmAttach(self->display, &self->shminfo);
+	XSync(self->display, false);
 
 	return self;
 }
@@ -56,7 +80,7 @@ void grabber_destroy(grabber_t *self) {
 
 bool grabber_grab(grabber_t *self) {
 
-  	XShmGetImage(self->display, self->window, self->image, 0, 0, 0x00ffffff);
+  	XShmGetImage(self->display, self->window, self->image, 0, 0, AllPlanes);
 
   	return true;
 }
