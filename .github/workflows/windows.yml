@@ -10,7 +10,8 @@ jobs:
 
     - name: Prepare
       run: |
-        choco install yasm zip -y
+        choco install yasm --download-checksum-x64=79da16e5310ee0fcb78ad604f88473fa
+        choco install zip
 
     - name: Build LWS
       shell: bash
