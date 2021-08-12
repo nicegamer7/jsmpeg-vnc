@@ -3,7 +3,7 @@ name: Windows
 on: [push]
 
 jobs:
-  dependencies:
+  build:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v1
@@ -13,28 +13,28 @@ jobs:
         choco install yasm --download-checksum-x64=79da16e5310ee0fcb78ad604f88473fa
         choco install zip
 
-    - name: Build LWS
-      shell: bash
-      run: |
-        git clone --depth 1 --branch v3.2-stable https://github.com/warmcat/libwebsockets
-        cd libwebsockets
-        mkdir build
-        cd build
-        cmake -G "MSYS Makefiles" -D CMAKE_AR=C:/ProgramData/chocolatey/lib/mingw/tools/install/mingw64/bin/x86_64-w64-mingw32-gcc-ar.exe -D CMAKE_C_COMPILER=x86_64-w64-mingw32-gcc -D CMAKE_C_FLAGS=-Wno-error -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=../../source/windows/libwebsockets/ -D LWS_WITH_SSL=OFF -D LWS_WITHOUT_TESTAPPS=ON -D LWS_WITH_SHARED=OFF -D LWS_WITH_STATIC=ON  ..
-        make
-        make install
-
     - name: Build FFmpeg
       shell: bash
       run: |
-        git clone --depth 1 --branch n4.2.1  git://source.ffmpeg.org/ffmpeg
+        git clone --depth 1 --branch n4.4 git://source.ffmpeg.org/ffmpeg
         cd ffmpeg
         ./configure --disable-everything --enable-encoder=mpeg1video --disable-shared --disable-hwaccels --disable-autodetect --enable-muxer=mpegts --prefix=../source/windows/ffmpeg/ --target-os=mingw32 --arch=x86_64
         make
         make install
 
+    - name: Build LWS
+      shell: bash
+      run: |
+        git clone --depth 1 --branch v4.2-stable https://github.com/warmcat/libwebsockets
+        cd libwebsockets
+        mkdir build
+        cd build
+        cmake -G "MSYS Makefiles" -D CMAKE_AR=C:/ProgramData/chocolatey/lib/mingw/tools/install/mingw64/bin/x86_64-w64-mingw32-gcc-ar.exe -D CMAKE_C_COMPILER=x86_64-w64-mingw32-gcc -D CMAKE_C_FLAGS=-Wno-error -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=../../source/windows/libwebsockets/ -D LWS_WITH_SSL=OFF -D LWS_SSL_CLIENT_USE_OS_CA_CERTS=OFF -D LWS_WITHOUT_TESTAPPS=ON -D LWS_WITH_SHARED=OFF -D LWS_WITH_STATIC=ON ..
+        make
+        make install
+
     - name: Prepare Windows Development Upload
-      run: | 
+      run: |
         cd source/windows
         zip -r ../../windows-development.zip ffmpeg libwebsockets
 
@@ -46,7 +46,7 @@ jobs:
         asset_name: windows-development.zip
         tag: autobuild
         overwrite: true
-     
+
     - name: Build JSMpeg-VNC
       shell: bash
       run: |
@@ -57,8 +57,8 @@ jobs:
         make
 
     - name: Prepare JSMpeg-VNC Upload
-      run: | 
-        cd bin 
+      run: |
+        cd bin
         zip ../jsmpeg-vnc-windows.zip jsmpeg-vnc-gdi.exe jsmpeg-vnc-desktop-duplication.exe client client/index.html client/jsmpeg.min.js client/jsmpeg-vnc.js
 
     - name: Upload JSMpeg-VNC

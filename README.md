@@ -32,7 +32,7 @@ The hosts cursor position is now drawn client sided. The cursor position (and di
 ##
 
 #### Latest JSMpeg
-This fork uses the latest JSMpeg used with some additions found [here](https://github.com/ollydev/jsmpeg/commit/26f97f40b2d29542e6a4d8a5c07d22c4c5d5acd8).
+This fork uses the latest JSMpeg used with some additions found [here](https://github.com/nicegamer7/jsmpeg/commit/46c90240ae52238151ee0033cec1b60602e6f473).
 
 ##
 

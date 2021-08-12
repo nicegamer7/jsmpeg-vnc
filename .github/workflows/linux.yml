@@ -14,7 +14,7 @@ jobs:
 
     - name: Build FFmpeg
       run: |
-        git clone --depth 1 --branch n4.2.1  git://source.ffmpeg.org/ffmpeg
+        git clone --depth 1 --branch n4.4 git://source.ffmpeg.org/ffmpeg
         cd ffmpeg
         ./configure --disable-everything --enable-encoder=mpeg1video --disable-shared --disable-hwaccels --disable-autodetect --enable-muxer=mpegts --prefix=../source/linux/ffmpeg/
         make
@@ -22,15 +22,15 @@ jobs:
 
     - name: Build LWS
       run: |
-        git clone --depth 1 --branch v3.2-stable https://github.com/warmcat/libwebsockets
+        git clone --depth 1 --branch v4.2-stable https://github.com/warmcat/libwebsockets
         cd libwebsockets
         mkdir build
         cd build
-        cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RELEASE -D LWS_WITH_SSL=OFF -D LWS_WITHOUT_TESTAPPS=ON -D LWS_WITH_SHARED=OFF -D LWS_WITH_STATIC=ON -D CMAKE_INSTALL_PREFIX=../../source/linux/libwebsockets ..
+        cmake -G "Unix Makefiles" -D CMAKE_BUILD_TYPE=RELEASE -D LWS_WITH_SSL=OFF -D LWS_SSL_CLIENT_USE_OS_CA_CERTS=OFF -D LWS_WITHOUT_TESTAPPS=ON -D LWS_WITH_SHARED=OFF -D LWS_WITH_STATIC=ON -D CMAKE_INSTALL_PREFIX=../../source/linux/libwebsockets ..
         make install
-        
-    - name: Prepare Linux Development 
-      run: | 
+
+    - name: Prepare Linux Development
+      run: |
         cd source/linux
         zip -r ../../linux-development.zip ffmpeg libwebsockets
 
@@ -41,8 +41,8 @@ jobs:
         file: ./linux-development.zip
         asset_name: linux-development.zip
         tag: autobuild
-        overwrite: true 
-        
+        overwrite: true
+
     - name: Build JSMpeg-VNC
       run: |
         cd project/
@@ -50,8 +50,8 @@ jobs:
         make -f makefile
 
     - name: Prepare Release Asset
-      run: | 
-        cd bin 
+      run: |
+        cd bin
         zip ../jsmpeg-vnc-linux.zip jsmpeg-vnc client client/index.html client/jsmpeg.min.js client/jsmpeg-vnc.js
 
     - name: Upload Release Asset
