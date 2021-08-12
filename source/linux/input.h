@@ -8,9 +8,10 @@
 typedef struct {
     Display *display;
     Window window;
+    void *com;
 } input_t;
 
-input_t *input_create(int display_number);
+input_t *input_create(int display_number, int com);
 void input_destroy(input_t *self);
 void input_mouse_move(input_t *self, int x, int y);
 void input_mouse_left_button(input_t *self, bool down);

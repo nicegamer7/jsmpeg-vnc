@@ -1,8 +1,32 @@
 #include "input.h"
 
-input_t *input_create(int display_name) {
+input_t *input_create(int display_name, int com) {
     input_t *self = (input_t *) malloc(sizeof(input_t));
     memset(self, 0, sizeof(input_t));
+
+    self->last_x = 0;
+    self->last_y = 0;
+
+    if (com) {
+        char port_name[7] = {0};
+        sprintf(port_name, "COM%d", com);
+        self->com = CreateFile(port_name,
+                               GENERIC_READ | GENERIC_WRITE,
+                               0,      //  must be opened with exclusive-access
+                               NULL,   //  default security attributes
+                               OPEN_EXISTING, //  must use OPEN_EXISTING
+                               0,      //  not overlapped I/O
+                               NULL);  //  hTemplate must be NULL for comm devices
+
+        if (self->com == INVALID_HANDLE_VALUE) {
+            printf("Failed to connect to Arduino board, falling back to normal input.\n");
+            self->com = NULL;
+        } else {
+            input_get_cursor_position(self, &self->last_x, &self->last_y);
+        }
+    } else {
+        self->com = NULL;
+    }
 
     return self;
 }
@@ -22,13 +46,30 @@ void input_mouse_input(int flags) {
 }
 
 void input_mouse_move(input_t *self, int x, int y) {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE;
-    input.mi.dx = x;
-    input.mi.dy = y;
+    if (self->com != NULL) {
+        char byte_to_write = 'x';
+        WriteFile(self->com, &byte_to_write, 1, NULL, NULL);
 
-    SendInput(1, &input, sizeof(INPUT));
+        byte_to_write = x - self->last_x;
+        WriteFile(self->com, &byte_to_write, 1, NULL, NULL);
+
+        byte_to_write = 'y';
+        WriteFile(self->com, &byte_to_write, 1, NULL, NULL);
+
+        byte_to_write = y - self->last_y;
+        WriteFile(self->com, &byte_to_write, 1, NULL, NULL);
+
+        self->last_x = x;
+        self->last_y = y;
+    } else {
+        INPUT input;
+        input.type = INPUT_MOUSE;
+        input.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE;
+        input.mi.dx = x;
+        input.mi.dy = y;
+
+        SendInput(1, &input, sizeof(INPUT));
+    }
 }
 
 void input_mouse_left_button(input_t *self, bool down) {

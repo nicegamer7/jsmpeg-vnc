@@ -24,7 +24,7 @@ typedef struct {
     int bit_rate;
 } app_t;
 
-app_t *app_create(int port, int display_number, int bit_rate, int allow_input, char *password, int buffer_size, int gop);
+app_t *app_create(int port, int display_number, int bit_rate, int allow_input, int com, char *password, int buffer_size, int gop);
 void app_destroy(app_t *self);
 void app_run(app_t *self, int target_fps);
 

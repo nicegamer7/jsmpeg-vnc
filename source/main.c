@@ -11,6 +11,9 @@ void exit_usage(char *self_name) {
             "  -fps                   target framerate. (default: 60)\n"
             "  -port                  streaming port. (default: 8080)\n"
             "  -allow_input           enable/disable remote input. (default: 1)\n"
+            #ifdef _WIN32
+            "  -com                   use an Arduino on the given serial port to move the mouse. (default: 0)\n"
+            #endif
             "  -password password     required for socket authentication. (default: no password)\n"
             "  -display_number        display number to capture. (default: 0)\n"
             "  -gop                   group of pictures. (default 18)\n"
@@ -25,6 +28,7 @@ int main(int argc, char *argv[]) {
     int fps = 60;
     int port = 8080;
     int allow_input = 1;
+    int com = 0;
     int display_number = 0;
     int video_buffer_size = 768 * 768;
     int gop = 18;
@@ -51,6 +55,10 @@ int main(int argc, char *argv[]) {
             display_number = atoi(value);
         } else if (strcmp(parameter, "allow_input") == 0) {
             allow_input = atoi(value);
+        #ifdef _WIN32
+        } else if (strcmp(parameter, "com") == 0) {
+            com = atoi(value);
+        #endif
         } else if (strcmp(parameter, "port") == 0) {
             port = atoi(value);
         } else if (strcmp(parameter, "video_buffer_size") == 0) {
@@ -66,7 +74,7 @@ int main(int argc, char *argv[]) {
     XInitThreads();
     #endif
 
-    app_t *app = app_create(port, display_number, bit_rate, allow_input, password, video_buffer_size, gop);
+    app_t *app = app_create(port, display_number, bit_rate, allow_input, com, password, video_buffer_size, gop);
 
     printf(
             "Dimensions: %dx%d\n"

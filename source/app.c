@@ -4,7 +4,7 @@
 #include "app.h"
 #include "os.h"
 
-app_t *app_create(int port, int display_number, int bit_rate, int allow_input, char *password, int buffer_size, int gop) {
+app_t *app_create(int port, int display_number, int bit_rate, int allow_input, int com, char *password, int buffer_size, int gop) {
     app_t *self = (app_t *) malloc(sizeof(app_t));
     memset(self, 0, sizeof(app_t));
 
@@ -21,7 +21,6 @@ app_t *app_create(int port, int display_number, int bit_rate, int allow_input, c
     self->buffer_size = buffer_size;
     self->gop = gop;
 
-    self->input = input_create(self->display_number);
     self->grabber = grabber_create(self->display_number);
     self->encoder = encoder_create(self->grabber->width, self->grabber->height, 0, 0, self->bit_rate, buffer_size, gop);
 
@@ -32,6 +31,7 @@ app_t *app_create(int port, int display_number, int bit_rate, int allow_input, c
     self->message_server->on_change_display = app_on_change_display;
 
     if (allow_input) {
+        self->input = input_create(self->display_number, com);
         self->message_server->on_paste = app_on_paste;
         self->message_server->on_copy = app_on_copy;
         self->message_server->on_key_down = app_on_key_down;
@@ -45,6 +45,8 @@ app_t *app_create(int port, int display_number, int bit_rate, int allow_input, c
         self->message_server->on_mouse_middle_up = app_on_mouse_middle_up;
         self->message_server->on_mouse_scroll = app_on_mouse_scroll;
         self->message_server->on_upload_file = app_on_upload_file;
+    } else {
+        self->input = NULL;
     }
 
     pthread_mutex_init(&self->mutex_streaming, NULL);
@@ -73,19 +75,33 @@ void app_on_change_display(app_t *self, int value) {
     printf("Changing display: %d\n", value);
 
     if (os_is_display(value)) {
+        #ifdef __linux__
         pthread_mutex_lock(&self->mutex_input);
+        #endif
+
         pthread_mutex_lock(&self->mutex_streaming);
 
+        #ifdef __linux__
         input_destroy(self->input);
+        #endif
+
         grabber_destroy(self->grabber);
-        encoder_destroy(self->encoder);
-
         self->display_number = value;
-        self->input = input_create(self->display_number);
-        self->grabber = grabber_create(self->display_number);
-        self->encoder = encoder_create(self->grabber->width, self->grabber->height, 0, 0, self->bit_rate, self->buffer_size, self->gop);
 
+        #ifdef __linux__
+        self->input = input_create(self->display_number, 0);
+        #endif
+
+        self->grabber = grabber_create(self->display_number);
+        if (self->encoder->in_width != self->grabber->width || self->encoder->in_height != self->grabber->height) {
+            encoder_destroy(self->encoder);
+            self->encoder = encoder_create(self->grabber->width, self->grabber->height, 0, 0, self->bit_rate, self->buffer_size, self->gop);
+        }
+
+        #ifdef __linux__
         pthread_mutex_unlock(&self->mutex_input);
+        #endif
+
         pthread_mutex_unlock(&self->mutex_streaming);
     }
 }
@@ -112,8 +128,13 @@ void app_on_key_up(app_t *self, int code) {
 
 void app_on_mouse_move(app_t *self, double x, double y) {
     #ifdef _WIN32
-    x *= 65535;
-    y *= 65535;
+    if (self->input->com != NULL) {
+        x *= self->grabber->width;
+        y *= self->grabber->height;
+    } else {
+        x *= 65535;
+        y *= 65535;
+    }
     #else
     x *= self->grabber->width;
     y *= self->grabber->height;

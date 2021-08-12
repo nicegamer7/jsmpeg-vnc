@@ -5,7 +5,7 @@
 #include <X11/extensions/XTest.h>
 #include "input.h"
 
-input_t *input_create(int display_number) {
+input_t *input_create(int display_number, int com) {
     input_t *self = (input_t *) malloc(sizeof(input_t));
     memset(self, 0, sizeof(input_t));
 
@@ -22,6 +22,8 @@ input_t *input_create(int display_number) {
     }
 
     self->window = XDefaultRootWindow(self->display);
+
+    self->com = NULL;
 
     return self;
 }
