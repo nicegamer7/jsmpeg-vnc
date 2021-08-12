@@ -28,6 +28,8 @@ input_t *input_create(int display_name, int com) {
         self->com = NULL;
     }
 
+    printf("last x: %d\nlast y: %d\n", self->last_x, self->last_y);
+
     return self;
 }
 
@@ -47,11 +49,14 @@ void input_mouse_input(int flags) {
 
 void input_mouse_move(input_t *self, int x, int y) {
     if (self->com != NULL) {
+        printf("input: using com port\n");
         char byte_to_write = 'x';
         WriteFile(self->com, &byte_to_write, 1, NULL, NULL);
 
         byte_to_write = x - self->last_x;
         WriteFile(self->com, &byte_to_write, 1, NULL, NULL);
+
+        printf("final x: %d\n", byte_to_write);
 
         byte_to_write = 'y';
         WriteFile(self->com, &byte_to_write, 1, NULL, NULL);
@@ -59,14 +64,19 @@ void input_mouse_move(input_t *self, int x, int y) {
         byte_to_write = y - self->last_y;
         WriteFile(self->com, &byte_to_write, 1, NULL, NULL);
 
+        printf("final y: %d\n", byte_to_write);
+
         self->last_x = x;
         self->last_y = y;
     } else {
+        printf("input: using standard movement\n");
         INPUT input;
         input.type = INPUT_MOUSE;
         input.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE;
         input.mi.dx = x;
         input.mi.dy = y;
+
+        printf("final x: %d\nfinal y: %d\n", x, y);
 
         SendInput(1, &input, sizeof(INPUT));
     }

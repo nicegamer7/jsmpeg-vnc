@@ -129,9 +129,11 @@ void app_on_key_up(app_t *self, int code) {
 void app_on_mouse_move(app_t *self, double x, double y) {
     #ifdef _WIN32
     if (self->input->com != NULL) {
+        printf("app: using com port\n");
         x *= self->grabber->width;
         y *= self->grabber->height;
     } else {
+        printf("app: using standard movement\n");
         x *= 65535;
         y *= 65535;
     }

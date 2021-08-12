@@ -169,6 +169,7 @@ void message_server_process(message_server_t *self, client_t *client, char *data
             double y = *((double *) (data + 16));
 
             if (self->on_mouse_move != NULL) {
+                printf("x: %f\ny: %f\n", x, y);
                 self->on_mouse_move(self->user, x, y);
             }
         }
