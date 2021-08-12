@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -118,10 +119,17 @@ void app_on_key_up(app_t *self, int code)
     pthread_mutex_unlock(&self->mutex_input);
 }
 
-void app_on_mouse_move(app_t *self, int x, int y)
+void app_on_mouse_move(app_t *self, double x, double y)
 {
+    #ifdef _WIN32
+    x *= 65535;
+    y *= 65535;
+    #else
+    x *= self->grabber->width;
+    y *= self->grabber->height;
+    #endif
     pthread_mutex_lock(&self->mutex_input);
-    input_mouse_move(self->input, x, y);
+    input_mouse_move(self->input, (int) round(x), (int) round(y));
     pthread_mutex_unlock(&self->mutex_input);
 }
 

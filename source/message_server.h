@@ -12,7 +12,7 @@ typedef struct message_server_t {
 
     pthread_t thread;
 
-    void (*on_mouse_move)(void *self, int x, int y);
+    void (*on_mouse_move)(void *self, double x, double y);
     void (*on_mouse_left_down)(void *self);
     void (*on_mouse_left_up)(void *self);
     void (*on_mouse_right_down)(void *self);

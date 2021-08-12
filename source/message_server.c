@@ -175,8 +175,8 @@ void message_server_process(message_server_t *self, client_t *client, char *data
 
         case MESSAGE_MOUSE_MOVE: {
 
-            int x = *((int *)(data + 4));
-            int y = *((int *)(data + 8));
+            double x = *((double *)(data + 8));
+            double y = *((double *)(data + 16));
 
             if (self->on_mouse_move != NULL) {
                 self->on_mouse_move(self->user, x, y);

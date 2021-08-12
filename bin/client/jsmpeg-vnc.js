@@ -157,18 +157,16 @@ var sendMousePosition = function(event) {
 
 	event.preventDefault();
 	
-	var message = new ArrayBuffer(12);
+	var message = new ArrayBuffer(24);
 	var type = new Uint32Array(message, 0);
-	var x = new Uint32Array(message, 4);
-	var y = new Uint32Array(message, 8);
+	var x = new Float64Array(message, 8);
+	var y = new Float64Array(message, 16);
 	
 	var rect = canvas.getBoundingClientRect();
-	var scaleX = canvas.width / (rect.right-rect.left),
-		scaleY = canvas.height / (rect.bottom-rect.top);
 
 	type[0] = MESSAGE_MOUSE_MOVE;
-	x[0] = (event.clientX - rect.left) * scaleX,
-	y[0] = (event.clientY - rect.top) * scaleY;
+	x[0] = (event.clientX - rect.left) / rect.width;
+	y[0] = (event.clientY - rect.top) / rect.height;
 
 	send(message);
 };

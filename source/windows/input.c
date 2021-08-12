@@ -26,7 +26,13 @@ void input_mouse_input(int flags)
 
 void input_mouse_move(input_t *self, int x, int y)
 {
-    SetCursorPos(x, y);
+    INPUT input;
+    input.type = INPUT_MOUSE;
+    input.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE;
+    input.mi.dx = x;
+    input.mi.dy = y;
+
+    SendInput(1, &input, sizeof(INPUT));
 }
 
 void input_mouse_left_button(input_t *self, bool down)

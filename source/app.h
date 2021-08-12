@@ -36,7 +36,7 @@ void app_on_paste(app_t *self, char *contents);
 void app_on_copy(app_t *self, char **out_clipboard);
 void app_on_key_down(app_t *self, int code);
 void app_on_key_up(app_t *self, int code);
-void app_on_mouse_move(app_t *self, int x, int y);
+void app_on_mouse_move(app_t *self, double x, double y);
 void app_on_mouse_left_down(app_t *self);
 void app_on_mouse_left_up(app_t *self);
 void app_on_mouse_right_down(app_t *self);
