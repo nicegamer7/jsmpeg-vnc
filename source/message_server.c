@@ -1,57 +1,55 @@
-#include <stdlib.h>
-#include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #ifdef __linux__
-	#include <unistd.h>
-	#include <arpa/inet.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 #endif
 
 #include "message_server.h"
 
 typedef struct client_t {
-	struct lws *wsi;
+    struct lws *wsi;
 
-	bool authenticated;
-	char address[32];
-	char password[255];
+    bool authenticated;
+    char address[32];
+    char password[255];
 
-	char *receive_buffer;
-	size_t receive_buffer_position;
-	size_t receive_buffer_size;
+    char *receive_buffer;
+    size_t receive_buffer_position;
+    size_t receive_buffer_size;
 
-	char *send_buffer;
+    char *send_buffer;
     int send_buffer_size;
 } client_t;
 
 static int callback_websockets(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *data, size_t len);
 
 static struct lws_protocols protocols[] = {
-    {"http", lws_callback_http_dummy, 0,                0},
-    {"ws",   callback_websockets,     sizeof(client_t), 256 * 256},
-    {NULL, NULL,                      0,                0}
+        {"http", lws_callback_http_dummy, 0,                0},
+        {"ws",   callback_websockets,     sizeof(client_t), 256 * 256},
+        {NULL,   NULL,                    0,                0}
 };
 
-void *message_server_service(void *user)
-{
-	message_server_t *self = (message_server_t *) user;
+void *message_server_service(void *user) {
+    message_server_t *self = (message_server_t *) user;
 
-	while (true) {
+    while (true) {
         lws_service(self->context, 1000);
-	}
+    }
 }
 
-message_server_t * message_server_create(int port, char *password) {
-
+message_server_t *message_server_create(int port, char *password) {
     message_server_t *self = (message_server_t *) malloc(sizeof(message_server_t));
     memset(self, 0, sizeof(message_server_t));
 
     struct lws_context_creation_info info = {0};
 
-	info.port = port;
+    info.port = port;
     info.gid = -1;
     info.uid = -1;
-    info.user = (void *)self;
+    info.user = (void *) self;
     info.protocols = protocols;
 
     self->password = password;
@@ -91,17 +89,14 @@ typedef enum input_message_t {
     MESSAGE_MOUSE_MIDDLE_UP = 11,
     MESSAGE_MOUSE_SCROLL = 12,
     MESSAGE_FILE_UPLOAD = 13
-}  input_message_t;
+} input_message_t;
 
 void message_server_process(message_server_t *self, client_t *client, char *data) {
-
-    input_message_t message = (*(int *)data);
+    input_message_t message = (*(int *) data);
 
     switch (message) {
-
         case MESSAGE_DISPLAY: {
-
-            int *display = (int *)(data + 4);
+            int *display = (int *) (data + 4);
 
             if (self->on_change_display != NULL) {
                 self->on_change_display(self->user, *display);
@@ -120,7 +115,6 @@ void message_server_process(message_server_t *self, client_t *client, char *data
         break;
 
         case MESSAGE_COPY: {
-
             char *clipboard;
 
             if (self->on_copy != NULL) {
@@ -143,7 +137,6 @@ void message_server_process(message_server_t *self, client_t *client, char *data
         break;
 
         case MESSAGE_PASTE: {
-
             char *contents = (data + 4);
 
             if (self->on_paste != NULL) {
@@ -153,8 +146,7 @@ void message_server_process(message_server_t *self, client_t *client, char *data
         break;
 
         case MESSAGE_KEY_DOWN: {
-
-            int key = *((int *)(data + 4));
+            int key = *((int *) (data + 4));
 
             if (self->on_key_down != NULL) {
                 self->on_key_down(self->user, key);
@@ -163,8 +155,7 @@ void message_server_process(message_server_t *self, client_t *client, char *data
         break;
 
         case MESSAGE_KEY_UP: {
-
-            int key = *((int *)(data + 4));
+            int key = *((int *) (data + 4));
 
             if (self->on_key_up != NULL) {
                 self->on_key_up(self->user, key);
@@ -174,9 +165,8 @@ void message_server_process(message_server_t *self, client_t *client, char *data
         break;
 
         case MESSAGE_MOUSE_MOVE: {
-
-            double x = *((double *)(data + 8));
-            double y = *((double *)(data + 16));
+            double x = *((double *) (data + 8));
+            double y = *((double *) (data + 16));
 
             if (self->on_mouse_move != NULL) {
                 self->on_mouse_move(self->user, x, y);
@@ -185,7 +175,6 @@ void message_server_process(message_server_t *self, client_t *client, char *data
         break;
 
         case MESSAGE_MOUSE_LEFT_DOWN: {
-
             if (self->on_mouse_left_down != NULL) {
                 self->on_mouse_left_down(self->user);
             }
@@ -193,7 +182,6 @@ void message_server_process(message_server_t *self, client_t *client, char *data
         break;
 
         case MESSAGE_MOUSE_LEFT_UP: {
-
             if (self->on_mouse_left_up != NULL) {
                 self->on_mouse_left_up(self->user);
             }
@@ -201,7 +189,6 @@ void message_server_process(message_server_t *self, client_t *client, char *data
         break;
 
         case MESSAGE_MOUSE_RIGHT_DOWN: {
-
             if (self->on_mouse_right_down != NULL) {
                 self->on_mouse_right_down(self->user);
             }
@@ -209,7 +196,6 @@ void message_server_process(message_server_t *self, client_t *client, char *data
         break;
 
         case MESSAGE_MOUSE_RIGHT_UP: {
-
             if (self->on_mouse_right_up != NULL) {
                 self->on_mouse_right_up(self->user);
             }
@@ -217,7 +203,6 @@ void message_server_process(message_server_t *self, client_t *client, char *data
         break;
 
         case MESSAGE_MOUSE_MIDDLE_DOWN: {
-
             if (self->on_mouse_middle_down != NULL) {
                 self->on_mouse_middle_down(self->user);
             }
@@ -225,7 +210,6 @@ void message_server_process(message_server_t *self, client_t *client, char *data
         break;
 
         case MESSAGE_MOUSE_MIDDLE_UP: {
-
             if (self->on_mouse_middle_up != NULL) {
                 self->on_mouse_middle_up(self->user);
             }
@@ -233,8 +217,7 @@ void message_server_process(message_server_t *self, client_t *client, char *data
         break;
 
         case MESSAGE_MOUSE_SCROLL: {
-
-            int amount = *((int *)(data + 4));
+            int amount = *((int *) (data + 4));
 
             if (self->on_mouse_scroll != NULL) {
                 self->on_mouse_scroll(self->user, amount);
@@ -243,9 +226,8 @@ void message_server_process(message_server_t *self, client_t *client, char *data
         break;
 
         case MESSAGE_FILE_UPLOAD: {
-
             char *filename = (data + 4);
-            int contents_size = *((int *)(data + 260));
+            int contents_size = *((int *) (data + 260));
             char *contents = (data + 264);
 
             if (self->on_upload_file != NULL) {
@@ -257,15 +239,12 @@ void message_server_process(message_server_t *self, client_t *client, char *data
 
 }
 
-static int callback_websockets(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *data, size_t len)
-{
-	struct message_server_t *self = (struct message_server_t *) lws_context_user(lws_get_context(wsi));
-	struct client_t *client = (struct client_t *) user;
+static int callback_websockets(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *data, size_t len) {
+    struct message_server_t *self = (struct message_server_t *) lws_context_user(lws_get_context(wsi));
+    struct client_t *client = (struct client_t *) user;
 
-	switch (reason) {
-
+    switch (reason) {
         case LWS_CALLBACK_SERVER_WRITEABLE: {
-
             if (!client->authenticated) {
                 return 1;
             }
@@ -281,25 +260,24 @@ static int callback_websockets(struct lws *wsi, enum lws_callback_reasons reason
         }
         break;
 
-		case LWS_CALLBACK_RECEIVE: {
-
+        case LWS_CALLBACK_RECEIVE: {
             if (!client->authenticated) {
                 return 1;
             }
 
-            // entire message
             if (lws_is_first_fragment(wsi) && lws_is_final_fragment(wsi)) {
+                // entire message
                 message_server_process(self, client, data);
-            // message is being sent in chunks. Write to buffer (in RAM) until completed then callback.
             } else {
-                if (lws_is_first_fragment(wsi)){
+                // message is being sent in chunks. Write to buffer (in RAM) until completed then callback.
+                if (lws_is_first_fragment(wsi)) {
                     client->receive_buffer = malloc(1024 * 1024);
                     client->receive_buffer_size = 1024 * 1024;
                     client->receive_buffer_position = len;
 
                     memcpy(&client->receive_buffer[0], data, len);
                 } else {
-                    if( client->receive_buffer_position + len > client->receive_buffer_size ) {
+                    if (client->receive_buffer_position + len > client->receive_buffer_size) {
                         client->receive_buffer_size *= 2;
                         client->receive_buffer = realloc(client->receive_buffer, client->receive_buffer_size);
                     }
@@ -321,7 +299,6 @@ static int callback_websockets(struct lws *wsi, enum lws_callback_reasons reason
         break;
 
         case LWS_CALLBACK_ESTABLISHED: {
-
             lws_get_peer_simple(wsi, &client->address[0], sizeof(client->address));
             lws_hdr_copy(wsi, &client->password[0], sizeof(client->password), WSI_TOKEN_GET_URI);
 
@@ -339,7 +316,6 @@ static int callback_websockets(struct lws *wsi, enum lws_callback_reasons reason
         break;
 
         case LWS_CALLBACK_CLOSED: {
-
             if (client->authenticated) {
                 // printf("Client disconnected: %s\n", client->address);
             }
@@ -351,12 +327,10 @@ static int callback_websockets(struct lws *wsi, enum lws_callback_reasons reason
             if (client->send_buffer != NULL) {
                 free(client->send_buffer - LWS_SEND_BUFFER_PRE_PADDING);
             }
-
         }
         break;
 
         case LWS_CALLBACK_USER: {
-
             client->send_buffer = malloc(len);
 
             memcpy(client->send_buffer, data, len);
@@ -367,7 +341,7 @@ static int callback_websockets(struct lws *wsi, enum lws_callback_reasons reason
             lws_callback_on_writable(client->wsi);
         }
         break;
-	}
+    }
 
-	return 0;
+    return 0;
 }

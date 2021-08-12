@@ -2,13 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <X11/Xlib.h>
 #include <unistd.h>
-
+#include <X11/Xlib.h>
 #include "os.h"
 
 bool os_is_display(int display_number) {
-
     if (display_number < 0) {
         return false;
     }
@@ -27,8 +25,7 @@ bool os_is_display(int display_number) {
     return res;
 }
 
-void os_set_clipboard(char *contents, int display_number)
-{
+void os_set_clipboard(char *contents, int display_number) {
     if (system("command -v xclip") == 0) {
         FILE *file = fopen(".clipboard", "w+");
         fwrite(contents, sizeof(char), strlen(contents), file);
@@ -42,10 +39,8 @@ void os_set_clipboard(char *contents, int display_number)
     }
 }
 
-char *os_get_clipboard(int display_number)
-{
+char *os_get_clipboard(int display_number) {
     if (system("command -v xclip") == 0) {
-
         char command[255] = {0};
         sprintf(command, "DISPLAY=:%d xclip -o -sel clip > .clipboard", display_number);
         system(command);
@@ -69,33 +64,27 @@ char *os_get_clipboard(int display_number)
     }
 }
 
-double os_get_time(void)
-{
-	struct timespec ts;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
+double os_get_time(void) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
     return (ts.tv_sec * 1000000000.0 + ts.tv_nsec) / 1000000;
 }
 
-void os_sleep(int milliseconds)
-{
-   struct timespec req, rem;
+void os_sleep(int milliseconds) {
+    struct timespec req, rem;
 
-   if (milliseconds > 999)
-   {
-        req.tv_sec = (int)(milliseconds / 1000);
-        req.tv_nsec = (milliseconds - ((long)req.tv_sec * 1000)) * 1000000;
-   }
-   else
-   {
+    if (milliseconds > 999) {
+        req.tv_sec = (int) (milliseconds / 1000);
+        req.tv_nsec = (milliseconds - ((long) req.tv_sec * 1000)) * 1000000;
+    } else {
         req.tv_sec = 0;
         req.tv_nsec = milliseconds * 1000000;
-   }
+    }
 
-   nanosleep(&req, &rem);
+    nanosleep(&req, &rem);
 }
 
-void os_save_upload(char *contents, int size, char *filename)
-{
+void os_save_upload(char *contents, int size, char *filename) {
     char destination[256] = {0};
     sprintf(destination, "%s/Downloads/%s", getenv("HOME"), filename);
 
@@ -107,9 +96,8 @@ void os_save_upload(char *contents, int size, char *filename)
 }
 
 void os_set_current_dir() {
-
     char buffer[256] = {0};
-    int size = readlink("/proc/self/exe", (char *)&buffer, sizeof(buffer));
+    int size = readlink("/proc/self/exe", (char *) &buffer, sizeof(buffer));
     if (size > 0) {
         for (int i = size; i >= 0; i--) {
             if (buffer[i] == '/') {

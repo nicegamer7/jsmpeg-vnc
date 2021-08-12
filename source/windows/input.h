@@ -1,15 +1,14 @@
 #ifndef INPUT_H
 #define INPUT_H
 
-#include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-
 #include <windows.h>
 
 typedef struct {
-  // nothing
+    // nothing
 } input_t;
 
 input_t *input_create(int display_number);

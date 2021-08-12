@@ -2,13 +2,12 @@
 #define INPUT_H
 
 #include <stdbool.h>
-
 #include <X11/X.h>
 #include <X11/Xlib.h>
 
 typedef struct {
-	Display *display;
-	Window window;
+    Display *display;
+    Window window;
 } input_t;
 
 input_t *input_create(int display_number);

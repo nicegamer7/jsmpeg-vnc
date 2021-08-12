@@ -2,21 +2,20 @@
 #define GRABBER_H
 
 #include <stdbool.h>
-
+#include <sys/ipc.h>
+#include <sys/shm.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/XShm.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
 
 typedef struct {
     int width;
     int height;
     Window window;
     Display *display;
-	XImage *image;
-	XShmSegmentInfo shminfo;
-	char *buffer;
+    XImage *image;
+    XShmSegmentInfo shminfo;
+    char *buffer;
 } grabber_t;
 
 grabber_t *grabber_create(int display_number);

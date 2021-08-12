@@ -2,23 +2,22 @@
 #define ENCODER_H
 
 #include <stdbool.h>
-
 #include "libavcodec/avcodec.h"
-#include "libswscale/swscale.h"
 #include "libavformat/avformat.h"
+#include "libswscale/swscale.h"
 
 typedef struct {
-	AVCodec *codec;
-	AVCodecContext *codec_context;
-	AVFrame *frame;
+    AVCodec *codec;
+    AVCodecContext *codec_context;
+    AVFrame *frame;
 
-	int in_width, in_height;
-	int out_width, out_height;
+    int in_width, in_height;
+    int out_width, out_height;
 
-	struct SwsContext *sws;
+    struct SwsContext *sws;
 
-	void *data;
-	int data_size;
+    void *data;
+    int data_size;
     int64_t next_pts;
 
     AVFormatContext *format_context;

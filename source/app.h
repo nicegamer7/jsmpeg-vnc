@@ -2,27 +2,27 @@
 #define APP_H
 
 #include "encoder.h"
-#include "message_server.h"
-#include "stream_server.h"
 #include "grabber.h"
 #include "input.h"
+#include "message_server.h"
+#include "stream_server.h"
 
 typedef struct {
-	encoder_t *encoder;
-	grabber_t *grabber;
-	stream_server_t *stream_server;
-	message_server_t *message_server;
-	input_t *input;
+    encoder_t *encoder;
+    grabber_t *grabber;
+    stream_server_t *stream_server;
+    message_server_t *message_server;
+    input_t *input;
 
-	int buffer_size;
-	int gop;
+    int buffer_size;
+    int gop;
 
     pthread_mutex_t mutex_streaming;
-	pthread_mutex_t mutex_input;
+    pthread_mutex_t mutex_input;
 
-	int display_number;
-	int bit_rate;
- } app_t;
+    int display_number;
+    int bit_rate;
+} app_t;
 
 app_t *app_create(int port, int display_number, int bit_rate, int allow_input, char *password, int buffer_size, int gop);
 void app_destroy(app_t *self);

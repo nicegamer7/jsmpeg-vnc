@@ -1,31 +1,27 @@
 #include "input.h"
 
-input_t *input_create(int display_name)
-{
-	input_t *self = (input_t *) malloc(sizeof(input_t));
-  	memset(self, 0, sizeof(input_t));
+input_t *input_create(int display_name) {
+    input_t *self = (input_t *) malloc(sizeof(input_t));
+    memset(self, 0, sizeof(input_t));
 
-	return self;
+    return self;
 }
 
-void input_destroy(input_t *self)
-{
+void input_destroy(input_t *self) {
     if (self != NULL) {
-		free(self);
-  	}
+        free(self);
+    }
 }
 
-void input_mouse_input(int flags)
-{
+void input_mouse_input(int flags) {
     INPUT input;
-	input.type = INPUT_MOUSE;
+    input.type = INPUT_MOUSE;
     input.mi.dwFlags = flags;
 
-	SendInput(1, &input, sizeof(INPUT));
+    SendInput(1, &input, sizeof(INPUT));
 }
 
-void input_mouse_move(input_t *self, int x, int y)
-{
+void input_mouse_move(input_t *self, int x, int y) {
     INPUT input;
     input.type = INPUT_MOUSE;
     input.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE;
@@ -35,8 +31,7 @@ void input_mouse_move(input_t *self, int x, int y)
     SendInput(1, &input, sizeof(INPUT));
 }
 
-void input_mouse_left_button(input_t *self, bool down)
-{
+void input_mouse_left_button(input_t *self, bool down) {
     if (down) {
         input_mouse_input(MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_LEFTDOWN);
     } else {
@@ -44,8 +39,7 @@ void input_mouse_left_button(input_t *self, bool down)
     }
 }
 
-void input_mouse_right_button(input_t *self, bool down)
-{
+void input_mouse_right_button(input_t *self, bool down) {
     if (down) {
         input_mouse_input(MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_RIGHTDOWN);
     } else {
@@ -53,8 +47,7 @@ void input_mouse_right_button(input_t *self, bool down)
     }
 }
 
-void input_mouse_middle_button(input_t *self, bool down)
-{
+void input_mouse_middle_button(input_t *self, bool down) {
     if (down) {
         input_mouse_input(MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MIDDLEDOWN);
     } else {
@@ -62,10 +55,9 @@ void input_mouse_middle_button(input_t *self, bool down)
     }
 }
 
-void input_mouse_scroll(input_t *self, int amount)
-{
+void input_mouse_scroll(input_t *self, int amount) {
     INPUT input;
-	input.type = INPUT_MOUSE;
+    input.type = INPUT_MOUSE;
     input.mi.dwFlags = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_WHEEL;
 
     if (amount > 0) {
@@ -74,11 +66,10 @@ void input_mouse_scroll(input_t *self, int amount)
         input.mi.mouseData = -1 * WHEEL_DELTA;
     }
 
-	SendInput(1, &input, sizeof(INPUT));
+    SendInput(1, &input, sizeof(INPUT));
 }
 
-void input_key_press(input_t *self, int key, bool down)
-{
+void input_key_press(input_t *self, int key, bool down) {
     BYTE scan_code = MapVirtualKey(key, 4);
     DWORD flags = 0;
 
@@ -89,9 +80,18 @@ void input_key_press(input_t *self, int key, bool down)
     }
 
     switch (key) {
-        case VK_LEFT: case VK_UP: case VK_RIGHT: case VK_DOWN:
-        case VK_PRIOR: case VK_NEXT: case VK_END: case VK_HOME:
-        case VK_INSERT: case VK_DELETE: case VK_DIVIDE: case VK_NUMLOCK:
+        case VK_LEFT:
+        case VK_UP:
+        case VK_RIGHT:
+        case VK_DOWN:
+        case VK_PRIOR:
+        case VK_NEXT:
+        case VK_END:
+        case VK_HOME:
+        case VK_INSERT:
+        case VK_DELETE:
+        case VK_DIVIDE:
+        case VK_NUMLOCK:
             scan_code |= 0x100;
             flags |= KEYEVENTF_EXTENDEDKEY;
             break;
@@ -101,7 +101,6 @@ void input_key_press(input_t *self, int key, bool down)
 }
 
 void input_get_cursor_position(input_t *self, int *x, int *y) {
-
     POINT cursor;
     GetCursorPos(&cursor);
 

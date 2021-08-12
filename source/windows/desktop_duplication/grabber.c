@@ -1,8 +1,9 @@
 #define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
+#include <windows.h>
+
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include "grabber.h"
 
 void error(char *message) {
@@ -10,16 +11,15 @@ void error(char *message) {
     exit(100);
 }
 
-grabber_t *grabber_create(char *display_name)
-{
-	grabber_t *self = (grabber_t *)malloc(sizeof(grabber_t));
-	memset(self, 0, sizeof(grabber_t));
+grabber_t *grabber_create(char *display_name) {
+    grabber_t *self = (grabber_t *) malloc(sizeof(grabber_t));
+    memset(self, 0, sizeof(grabber_t));
 
-	D3D_FEATURE_LEVEL feature_level;
+    D3D_FEATURE_LEVEL feature_level;
 
-	if FAILED(D3D11CreateDevice(0, D3D_DRIVER_TYPE_HARDWARE, 0, D3D11_CREATE_DEVICE_SINGLETHREADED, 0, 0, D3D11_SDK_VERSION, &self->device, &feature_level, &self->context)) {
+    if FAILED(D3D11CreateDevice(0, D3D_DRIVER_TYPE_HARDWARE, 0, D3D11_CREATE_DEVICE_SINGLETHREADED, 0, 0, D3D11_SDK_VERSION, &self->device, &feature_level, &self->context)) {
         error("D3D11CreateDevice");
-	}
+    }
 
     IDXGIDevice *device;
     if FAILED(ID3D11Device_QueryInterface(self->device, &IID_IDXGIDevice, &device)) {
@@ -67,28 +67,26 @@ grabber_t *grabber_create(char *display_name)
     self->height = self->texture_desc.Height;
     self->buffer = malloc(self->width * self->height * 4);
 
-	return self;
+    return self;
 }
 
-void grabber_destroy(grabber_t *self)
-{
-	if (self == NULL) {
-      return;
-	}
+void grabber_destroy(grabber_t *self) {
+    if (self == NULL) {
+        return;
+    }
 
-	IDXGIOutputDuplication_Release(self->duplication);
-	ID3D11Texture2D_Release(self->staging);
-	ID3D11DeviceContext_Release(self->context);
+    IDXGIOutputDuplication_Release(self->duplication);
+    ID3D11Texture2D_Release(self->staging);
+    ID3D11DeviceContext_Release(self->context);
     ID3D11Device_Release(self->device);
-	ID3D11DeviceContext_Release(self->context);
+    ID3D11DeviceContext_Release(self->context);
 
-	free(self->buffer);
-	free(self);
+    free(self->buffer);
+    free(self);
 }
 
-bool grabber_grab(grabber_t *self)
-{
-    IDXGIResource* desktop_resources = 0;
+bool grabber_grab(grabber_t *self) {
+    IDXGIResource *desktop_resources = 0;
     DXGI_OUTDUPL_FRAME_INFO frame_info = {};
     HRESULT status = IDXGIOutputDuplication_AcquireNextFrame(self->duplication, 0, &frame_info, &desktop_resources);
 
@@ -101,7 +99,7 @@ bool grabber_grab(grabber_t *self)
         exit(1);
     }
 
-    ID3D11Texture2D* desktop_texture;
+    ID3D11Texture2D *desktop_texture;
     ID3D11Texture2D_QueryInterface(desktop_resources, &IID_ID3D11Texture2D, &desktop_texture);
 
     ID3D11DeviceContext_CopyResource(self->context, self->staging, desktop_texture);
@@ -110,7 +108,7 @@ bool grabber_grab(grabber_t *self)
     IDXGIOutputDuplication_ReleaseFrame(self->duplication);
 
     D3D11_MAPPED_SUBRESOURCE resource;
-	ID3D11DeviceContext_Map(self->context, self->staging, 0, D3D11_MAP_READ, 0, &resource);
+    ID3D11DeviceContext_Map(self->context, self->staging, 0, D3D11_MAP_READ, 0, &resource);
 
     memcpy(self->buffer, resource.pData, self->width * self->height * 4);
 

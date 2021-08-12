@@ -1,13 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "grabber.h"
 
 grabber_t *grabber_create(int display_number) {
-
-	grabber_t *self = (grabber_t *) malloc(sizeof(grabber_t));
-  	memset(self, 0, sizeof(grabber_t));
+    grabber_t *self = (grabber_t *) malloc(sizeof(grabber_t));
+    memset(self, 0, sizeof(grabber_t));
 
     char display_name[100] = {0};
     if (display_number > 0) {
@@ -28,59 +26,55 @@ grabber_t *grabber_create(int display_number) {
     self->window = XDefaultRootWindow(self->display);
 
     XWindowAttributes attri;
-  	XGetWindowAttributes(self->display, self->window, &attri);
+    XGetWindowAttributes(self->display, self->window, &attri);
 
-	self->width = attri.width;
-	self->height = attri.height;
+    self->width = attri.width;
+    self->height = attri.height;
 
-	self->shminfo.shmid = shmget(IPC_PRIVATE, self->width * self->height * 4, IPC_CREAT | 0777);
-	if (self->shminfo.shmid < 0) {
+    self->shminfo.shmid = shmget(IPC_PRIVATE, self->width * self->height * 4, IPC_CREAT | 0777);
+    if (self->shminfo.shmid < 0) {
         printf("Grabber: shmget returned NULL\n");
         exit(1);
-	}
+    }
 
-	self->shminfo.shmaddr = shmat(self->shminfo.shmid, 0, 0);
-	if (self->shminfo.shmaddr == NULL) {
+    self->shminfo.shmaddr = shmat(self->shminfo.shmid, 0, 0);
+    if (self->shminfo.shmaddr == NULL) {
         printf("Grabber: shmaddr returned NULL\n");
         exit(1);
-	}
+    }
 
-	shmctl(self->shminfo.shmid, IPC_RMID, 0);
+    shmctl(self->shminfo.shmid, IPC_RMID, 0);
 
-	self->shminfo.readOnly = False;
+    self->shminfo.readOnly = False;
 
-	self->image = XShmCreateImage(self->display, XDefaultVisual(self->display, 0), XDefaultDepth(self->display, 0), ZPixmap, NULL, &self->shminfo, self->width, self->height);
-	if (self->image == NULL) {
+    self->image = XShmCreateImage(self->display, XDefaultVisual(self->display, 0), XDefaultDepth(self->display, 0), ZPixmap, NULL, &self->shminfo, self->width, self->height);
+    if (self->image == NULL) {
         printf("Grabber: XShmCreateImage returned NULL\n");
         exit(1);
-	}
+    }
 
-	self->image->data = (unsigned int*) self->shminfo.shmaddr;
+    self->image->data = (unsigned int *) self->shminfo.shmaddr;
     self->buffer = self->image->data;
 
-	XShmAttach(self->display, &self->shminfo);
-	XSync(self->display, false);
+    XShmAttach(self->display, &self->shminfo);
+    XSync(self->display, false);
 
-	return self;
+    return self;
 }
 
 void grabber_destroy(grabber_t *self) {
+    if (self != NULL) {
+        XShmDetach(self->display, &self->shminfo);
+        XDestroyImage(self->image);
+        XCloseDisplay(self->display);
 
-	if (self != NULL) {
+        shmdt(self->shminfo.shmaddr);
 
-		XShmDetach(self->display, &self->shminfo);
-		XDestroyImage(self->image);
-		XCloseDisplay(self->display);
-
-		shmdt(self->shminfo.shmaddr);
-
-		free(self);
-  	}
+        free(self);
+    }
 }
 
 bool grabber_grab(grabber_t *self) {
-
-  	XShmGetImage(self->display, self->window, self->image, 0, 0, AllPlanes);
-
-  	return true;
+    XShmGetImage(self->display, self->window, self->image, 0, 0, AllPlanes);
+    return true;
 }

@@ -1,19 +1,18 @@
 #ifndef GRABBER_H
 #define GRABBER_H
 
-#include <Windows.h>
+#include <windows.h>
 
 typedef struct {
-
-	HWND window;
-	HDC windowDC;
-	HDC memoryDC;
-	HBITMAP bitmap;
-	BITMAPINFOHEADER bitmapInfo;
+    HWND window;
+    HDC windowDC;
+    HDC memoryDC;
+    HBITMAP bitmap;
+    BITMAPINFOHEADER bitmapInfo;
     HGDIOBJ obj;
-	int width, height;
+    int width, height;
 
-	void *buffer;
+    void *buffer;
 } grabber_t;
 
 grabber_t *grabber_create(int display_number);

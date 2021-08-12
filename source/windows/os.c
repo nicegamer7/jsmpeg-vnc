@@ -1,24 +1,23 @@
-#include <windows.h>
-#include <stdio.h>
 #include <direct.h>
+#include <stdio.h>
+#include <windows.h>
 #include "os.h"
 
 bool os_is_display(int display_number) {
     return true;
 }
 
-double os_get_time(void)
-{
+double os_get_time(void) {
     LARGE_INTEGER clock_freq, current_time;
-	double time_val;
+    double time_val;
 
     QueryPerformanceFrequency(&clock_freq);
-	QueryPerformanceCounter(&current_time);
-	time_val = (double)current_time.QuadPart;
-	time_val *= 1000000000.0;
-	time_val /= clock_freq.QuadPart;
+    QueryPerformanceCounter(&current_time);
+    time_val = (double) current_time.QuadPart;
+    time_val *= 1000000000.0;
+    time_val /= clock_freq.QuadPart;
 
-	return time_val / 1000000;
+    return time_val / 1000000;
 }
 
 void os_set_clipboard(char *contents, int display_number) {
@@ -33,7 +32,6 @@ void os_set_clipboard(char *contents, int display_number) {
 }
 
 char *os_get_clipboard(int display_number) {
-
     if (OpenClipboard(0)) {
         HANDLE clipboardHandle = GetClipboardData(CF_TEXT);
         char *contents = GlobalLock(clipboardHandle);
@@ -65,10 +63,9 @@ void os_save_upload(char *contents, int size, char *filename) {
     printf("\nFile uploaded: %s\n", destination);
 }
 
-void os_set_current_dir()
-{
+void os_set_current_dir() {
     char buffer[256] = {0};
-    int size = GetModuleFileName(NULL, (char *)&buffer, sizeof(buffer));
+    int size = GetModuleFileName(NULL, (char *) &buffer, sizeof(buffer));
     if (size > 0) {
         for (int i = size; i >= 0; i--) {
             if (buffer[i] == '\\') {
